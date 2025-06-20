@@ -1,0 +1,141 @@
+openapi: 3.1.1
+info:
+  title: Auth Service API
+  version: 1.0.0
+  description: >
+    User authentication and authorization API for MayBerries
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Invalid input
+        '409':
+          description: Email already exists
+        '500':
+          description: Internal server error
+
+  /auth/login:
+    post:
+      summary: Authenticate user and return tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Unauthorized
+
+  /auth/me:
+    get:
+      summary: Get current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Unauthorized
+
+  /auth/refresh:
+    post:
+      summary: Refresh access and refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid or expired refresh token
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          format: password
+      required: [username, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required: [username, password]
+
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required: [refresh_token]
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        role:
+          type: string
+          enum: [user, manager, admin]
+
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        role:
+          type: string
+          enum: [user, manager, admin]
