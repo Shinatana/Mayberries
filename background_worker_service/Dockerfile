@@ -12,7 +12,7 @@ RUN go mod download
 
 COPY cmd ./cmd
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/app/main.go
+RUN CGO_ENABLED=0 GOOS=darwin go build -o main ./cmd/app/main.go
 
 RUN chmod +x /app/main
 

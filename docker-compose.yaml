@@ -1,7 +1,6 @@
 services:
   auth_service:
     build: auth_service
-    platform: linux/amd64
     container_name: auth_service
     depends_on:
       - postgres
@@ -14,35 +13,30 @@ services:
       - DB_PWD=secret
       - DB_DATABASE=mydb
       - MIGRATE_DIR=/app/migrations
-    volumes:
-      - ./auth_service/migrations:/app/migrations
+
     networks:
       - backend
 
   background_worker-service:
     build: background_worker_service
-    platform: linux/amd64
     container_name: background_worker_service
     networks:
       - backend
 
   catalog_service:
     build: catalog_service
-    platform: linux/amd64
     container_name: catalog_service
     networks:
       - backend
 
   infrastructure:
     build: infrastructure
-    platform: linux/amd64
     container_name: infrastructure
     networks:
       - backend
 
   order_service:
     build: order_service
-    platform: linux/amd64
     container_name: order_service
     ports:
       - "8003:8003"
@@ -51,7 +45,6 @@ services:
 
   reviews_service:
     build: reviews_service
-    platform: linux/amd64
     container_name: reviews_service
     networks:
       - backend
