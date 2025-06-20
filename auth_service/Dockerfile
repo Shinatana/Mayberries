@@ -1,21 +1,21 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24.1-alpine AS builder
 
 RUN apk add --no-cache git
 
 WORKDIR /app
 
-ENV Goproxy=https://goproxy.io,direct
+ENV GOPROXY=https://goproxy.io,direct
 ENV GOSUMDB=off
 
-COPY catalog-service/go.mod catalog/go.sum ./
+COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY catalog-service/cmd ./cmd
-COPY catalog-service/internal ./internal
-COPY catalog-service/pkg ./pkg
+COPY cmd ./cmd
+COPY internal ./internal
+COPY pkg ./pkg
 
-RUN CGO_ENABLE=0 GOOS=darwin go build -o main ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=darwin go build -o main ./cmd/main.go
 
 FROM alpine:latest
 
@@ -25,7 +25,7 @@ COPY --from=builder /app/main /app/main
 
 WORKDIR /app
 
-EXPOSE 8081
+EXPOSE 8080
 
 ENTRYPOINT ["/app/main"]
 

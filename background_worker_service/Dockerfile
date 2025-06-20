@@ -12,17 +12,14 @@ RUN go mod download
 
 COPY cmd ./cmd
 
-RUN CGO_ENABLED=0 GOOS=darwin go build -o main ./cmd/app/main.go
-
+RUN CGO_ENABLED=0 GOOS=darwin go build -o main ./cmd/main.go
 RUN chmod +x /app/main
 
 FROM alpine:latest
 
-
-COPY --from=builder /app/main /app/main
-
 WORKDIR /app
 
+COPY --from=builder /app/main /app/main
 RUN chmod +x /app/main
 
 EXPOSE 8080
