@@ -6,7 +6,7 @@ COPY go.mod ./
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o main ./cmd/app/main.go
+RUN CGO_ENABLED=0 GOOS=darwin go build -v -o main ./cmd/app/main.go
 
 RUN chmod +x /app/main
 

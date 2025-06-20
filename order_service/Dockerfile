@@ -7,14 +7,14 @@ WORKDIR /app
 ENV GOPROXY=https://proxy.golang.org,direct
 ENV GOSUMDB=off
 
-COPY infrastructure/go.mod infrastructure/go.sum ./
+COPY order_service/go.mod
 RUN go mod download
 
-COPY infrastructure/cmd ./cmd
-COPY infrastructure/internal ./internal
-COPY infrastructure/pkg ./pkg
+COPY order_service/cmd ./cmd
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/main.go
+
+
+RUN CGO_ENABLED=0 GOOS=darwin go build -o main ./cmd/main.go
 
 FROM alpine:latest
 

@@ -15,7 +15,7 @@ COPY catalog-service/cmd ./cmd
 COPY catalog-service/internal ./internal
 COPY catalog-service/pkg ./pkg
 
-RUN CGO_ENABLE=0 GOOS=linux go build -o main ./cmd/main.go
+RUN CGO_ENABLE=0 GOOS=darwin go build -o main ./cmd/main.go
 
 FROM alpine:latest
 
