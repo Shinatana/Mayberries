@@ -1,10 +1,14 @@
 package init
 
 import (
-	"auth_service/internal/conf"
+	internalConf "auth_service/internal/conf"
 	"auth_service/internal/conf/loader"
+	"auth_service/internal/http/gin"
 	"auth_service/pkg/log"
+	"context"
 	"fmt"
+	"os/signal"
+	"syscall"
 )
 
 func App() error {
@@ -15,7 +19,7 @@ func App() error {
 
 	Log(&cfg.Log)
 
-	sanitizeConfig := func(cfg conf.Config) *conf.Config {
+	sanitizeConfig := func(cfg internalConf.Config) *internalConf.Config {
 		sanitized := cfg
 
 		// if sanitized.Redis.Pwd != "" {
@@ -39,5 +43,21 @@ func App() error {
 	}()
 	log.Info("connected to database")
 
+	ginServer := gin.NewGinServer()
+
+	ginServer.AddMiddleware( /* твои мидлвары */ )
+	ginServer.AddRouters( /* твои роутеры */ )
+
+	handler := ginServer.Build()
+
+	closer := Http(&cfg.Http, handler)
+
+	// Graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	<-ctx.Done()
+
+	closer() // Shutdown сервер
 	return nil
 }
