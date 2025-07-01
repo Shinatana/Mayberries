@@ -39,7 +39,7 @@ type LoggerOptions struct {
 //	}
 type MigrationOptions struct {
 	Version          int           `mapstructure:"version" validate:"gt=-2"`
-	MigrationFiles   string        `mapstructure:"dir" validate:"omitempty,dir"`
+	MigrationFiles   string        `mapstructure:"dir" validate:"omitempty"`
 	MigrationTimeout time.Duration `mapstructure:"timeout" validate:"min=1s,max=60s"`
 }
 
@@ -62,4 +62,13 @@ type DatabaseOptions struct {
 	MaxIdleConnections int           `mapstructure:"max_idle" validate:"gte=0"`
 	ConnMaxLifetime    time.Duration `mapstructure:"max_lifetime" validate:"min=1s,max=1h"`
 	InitTimeout        time.Duration `mapstructure:"init_timeout" validate:"min=1s,max=60s"`
+}
+
+type JWTOptions struct {
+	Secret   string `mapstructure:"secret" validate:"required"`
+	TokenTTL int    `mapstructure:"token_ttl" validate:"required,gt=0"` // в минутах
+}
+
+type RedisOptions struct {
+	Addr string `mapstructure:"addr" validate:"required,hostname_port"`
 }

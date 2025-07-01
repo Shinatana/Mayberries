@@ -33,16 +33,13 @@ const (
 
 	defaultMigrationTimeout = 10 * time.Second
 	defaultMigrationVersion = 0
-	defaultMigrationDir     = "./migrations"
+	defaultMigrationDir     = ""
 
 	defaultDatabaseSSL        = "prefer"
 	defaultMaxOpenConnections = 100
 	defaultMaxIdleConnections = 20
 	defaultConnMaxLifetime    = 5 * time.Minute
 	defaultInitTimeout        = 2 * time.Second
-
-	defaultJwtTokenLifetime        = 1 * time.Hour
-	defaultJwtRefreshTokenLifetime = 24 * time.Hour
 )
 
 type viperKey struct {
