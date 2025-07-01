@@ -9,7 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"auth_service/internal/models"
 	"auth_service/pkg/config"
@@ -17,61 +18,70 @@ import (
 )
 
 const initPingTimeout = 1 * time.Second
-const registerUserQuery = `
-	INSERT INTO users (email, name, password_hash)
-	VALUES ($1, $2, $3);
-`
-const queryUserPwd = `
-	SELECT password_hash FROM users WHERE email = $1;
-`
 
 type pgsql struct {
-	pool *pgxpool.Pool
+	pool *gorm.DB
 }
 
 func NewDB(ctx context.Context, dbConfig *config.DatabaseOptions) (repo.DB, error) {
-	config, err := pgxpool.ParseConfig(misc.GetDSN(dbConfig, misc.WithPGXv5Format()))
+	dsn := misc.GetDSN(dbConfig, misc.WithGormFormat())
+
+	gormDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse connection string: %w", err)
+		return nil, fmt.Errorf("failed to open gorm DB: %w", err)
 	}
 
-	pool, err := pgxpool.NewWithConfig(ctx, config)
+	sqlDB, err := gormDB.DB() // Получаем sql.DB для низкоуровневых операций, например ping
 	if err != nil {
-		return nil, fmt.Errorf("failed to create pool: %w", err)
+		return nil, fmt.Errorf("failed to get sql.DB from gorm DB: %w", err)
+	}
+
+	// вот тут вопрос! Я раньше делала это в misc.WithPGXv5Format. В Gorm это делать нельзя
+	// вопрос: куда это лучше убрать, не думаю, что этим conf тут место
+
+	if dbConfig.MaxOpenConnections > 0 {
+		sqlDB.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	}
+	if dbConfig.MaxIdleConnections >= 0 {
+		sqlDB.SetMaxIdleConns(dbConfig.MaxIdleConnections)
+	}
+	if dbConfig.ConnMaxLifetime > 0 {
+		sqlDB.SetConnMaxLifetime(dbConfig.ConnMaxLifetime)
 	}
 
 	ctsSec, cancel := context.WithTimeout(ctx, initPingTimeout)
 	defer cancel()
 
-	err = pool.Ping(ctsSec)
-	if err != nil {
-		pool.Close()
-		return nil, fmt.Errorf("failed to ping pool: %w", err)
+	if err := sqlDB.PingContext(ctsSec); err != nil {
+		return nil, fmt.Errorf("failed to ping DB: %w", err)
 	}
 
-	return &pgsql{pool: pool}, nil
+	return &pgsql{pool: gormDB}, nil
 }
 
 func (p *pgsql) Close() {
-	p.pool.Close()
+	sqlDB, err := p.pool.DB()
+	if err == nil {
+		_ = sqlDB.Close()
+	}
 }
 
 func (p *pgsql) RegisterUser(ctx context.Context, user models.RegisterUser) error {
-	_, err := p.pool.Exec(ctx, registerUserQuery, user.Email, user.Name, user.Password)
-	if err != nil {
+	result := p.pool.WithContext(ctx).Create(&user)
+	if result.Error != nil {
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		if errors.As(result.Error, &pgErr) && pgErr.Code == "23505" {
 			return models.ErrDuplicateUser
 		}
-		return fmt.Errorf("failed to register user: %w", err)
+		return fmt.Errorf("failed to register user: %w", result.Error)
 	}
 
 	return nil
 }
 
 func (p *pgsql) GetUserPassword(ctx context.Context, email string) (string, error) {
-	var passwordHash string
-	err := p.pool.QueryRow(ctx, queryUserPwd, email).Scan(&passwordHash)
+	var user models.RegisterUser
+	err := p.pool.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", models.ErrUserNotFound
@@ -79,5 +89,5 @@ func (p *pgsql) GetUserPassword(ctx context.Context, email string) (string, erro
 		return "", fmt.Errorf("failed to get user's password: %w", err)
 	}
 
-	return passwordHash, nil
+	return user.Password, nil
 }
