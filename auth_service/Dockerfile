@@ -15,7 +15,7 @@ COPY cmd ./cmd
 COPY internal ./internal
 COPY pkg ./pkg
 
-RUN CGO_ENABLED=0 GOOS=darwin go build -o main ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o main ./cmd/main.go
 
 FROM alpine:latest
 
@@ -28,6 +28,8 @@ WORKDIR /app
 EXPOSE 8080
 
 ENTRYPOINT ["/app/main"]
+
+
 
 
 

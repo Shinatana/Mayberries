@@ -14,7 +14,7 @@ services:
       - DB_USER=myuser
       - DB_PWD=secret
       - DB_DATABASE=mydb
-      - MIGRATE_DIR=/app/migrations
+      - MIGRATE_DIR=/Users/konoko/Documents/golang/Mayberries/internal/repo/migrate
     networks:
       - backend
 

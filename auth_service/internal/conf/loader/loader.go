@@ -26,7 +26,7 @@ const (
 	defaultIdleTimeout        = 1 * time.Minute
 	defaultHttpMaxHeaderBytes = 8 * 1024
 	defaultConfigKey          = "config"
-	defaultConfigFilePath     = "./config.toml"
+	defaultConfigFilePath     = "./conf.toml"
 
 	defaultLogLevel  = "warn"
 	defaultLogFormat = "json"
@@ -40,6 +40,9 @@ const (
 	defaultMaxIdleConnections = 20
 	defaultConnMaxLifetime    = 5 * time.Minute
 	defaultInitTimeout        = 2 * time.Second
+
+	defaultJwtTokenLifetime        = 1 * time.Hour
+	defaultJwtRefreshTokenLifetime = 24 * time.Hour
 )
 
 type viperKey struct {
@@ -96,7 +99,7 @@ func genViperKeys() []viperKey {
 		},
 		// Http options
 		{
-			name:         "http.hosts",
+			name:         "http.host",
 			cmdlineName:  "http-host",
 			defaultValue: nil,
 			usage:        "Host address(es) to bind the HTTP server to",
