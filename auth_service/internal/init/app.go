@@ -4,6 +4,10 @@ import (
 	internalConf "auth_service/internal/conf"
 	"auth_service/internal/conf/loader"
 	"auth_service/internal/http/gin"
+	"auth_service/internal/http/gin/middlewares/recovery"
+	requestid "auth_service/internal/http/gin/middlewares/request-id"
+	"auth_service/internal/http/gin/routes/auth/login"
+	register "auth_service/internal/http/gin/routes/v1/auth/reqister"
 	"auth_service/pkg/log"
 	"context"
 	"fmt"
@@ -45,8 +49,15 @@ func App() error {
 
 	ginServer := gin.NewGinServer()
 
-	ginServer.AddMiddleware( /* твои мидлвары */ )
-	ginServer.AddRouters( /* твои роутеры */ )
+	ginServer.AddMiddleware(
+		recovery.Middleware(),
+		requestid.Middleware(),
+	)
+
+	ginServer.AddRouters(
+		login.NewLoginHandler(db),
+		register.NewRegisterHandler(db),
+	)
 
 	handler := ginServer.Build()
 
