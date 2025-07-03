@@ -1,6 +1,7 @@
 package init
 
 import (
+	"auth_service/internal/repo"
 	"auth_service/internal/repo/pgsql"
 	"auth_service/pkg/config"
 	"auth_service/pkg/log"
@@ -10,7 +11,7 @@ import (
 	"fmt"
 )
 
-func init_db(dbOptions *config.DatabaseOptions) (*pgsql.Pgsql, error) {
+func init_db(dbOptions *config.DatabaseOptions) (repo.DB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbOptions.InitTimeout)
 	defer cancel()
 
@@ -35,14 +36,6 @@ func init_db(dbOptions *config.DatabaseOptions) (*pgsql.Pgsql, error) {
 	}
 
 	log.Info("⏫ Starting migration")
-
-	// Выполняем миграцию
-	//if err := migrate.Up(tx); err != nil {
-	//	if rbErr := tx.Rollback(); rbErr != nil {
-	//		return nil, fmt.Errorf("migration failed: %v; rollback also failed: %w", err, rbErr)
-	//	}
-	//	return nil, fmt.Errorf("migration failed: %w", err)
-	//}
 
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit migration transaction: %w", err)

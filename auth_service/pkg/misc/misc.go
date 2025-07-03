@@ -34,7 +34,7 @@ type GetDSNFormat func(dsn *url.URL, db *config.DatabaseOptions) string
 
 func WithMigratorFormat() GetDSNFormat {
 	return func(dsn *url.URL, db *config.DatabaseOptions) string {
-		dsn.Scheme = "pgx5"
+		dsn.Scheme = "postgres"
 
 		query := dsn.Query()
 
@@ -86,4 +86,21 @@ func GetDSN(db *config.DatabaseOptions, format GetDSNFormat) string {
 	}
 
 	return format(&dsn, db)
+}
+
+func WithGormFormat() GetDSNFormat {
+	return func(dsn *url.URL, db *config.DatabaseOptions) string {
+		dsn.Scheme = "postgres"
+
+		query := dsn.Query()
+
+		query.Set("sslmode", db.SSL)
+		if db.Schema != "" {
+			query.Set("search_path", db.Schema)
+		}
+
+		dsn.RawQuery = query.Encode()
+
+		return dsn.String()
+	}
 }

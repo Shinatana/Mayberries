@@ -3,6 +3,7 @@ package main
 import (
 	initApp "auth_service/internal/init"
 	"auth_service/pkg/log"
+	_ "github.com/lib/pq"
 	"os"
 )
 

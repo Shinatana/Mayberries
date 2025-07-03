@@ -26,14 +26,14 @@ const (
 	defaultIdleTimeout        = 1 * time.Minute
 	defaultHttpMaxHeaderBytes = 8 * 1024
 	defaultConfigKey          = "config"
-	defaultConfigFilePath     = "./config.toml"
+	defaultConfigFilePath     = "./conf.toml"
 
 	defaultLogLevel  = "warn"
 	defaultLogFormat = "json"
 
 	defaultMigrationTimeout = 10 * time.Second
 	defaultMigrationVersion = 0
-	defaultMigrationDir     = "./migrations"
+	defaultMigrationDir     = ""
 
 	defaultDatabaseSSL        = "prefer"
 	defaultMaxOpenConnections = 100
@@ -96,7 +96,7 @@ func genViperKeys() []viperKey {
 		},
 		// Http options
 		{
-			name:         "http.hosts",
+			name:         "http.host",
 			cmdlineName:  "http-host",
 			defaultValue: nil,
 			usage:        "Host address(es) to bind the HTTP server to",
