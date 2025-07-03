@@ -12,7 +12,7 @@ type Migrator interface {
 }
 
 type DB interface {
-	RegisterUser(ctx context.Context, user models.RegisterUser) error
+	RegisterUser(ctx context.Context, user models.Users) error
 	GetUserPassword(ctx context.Context, email string) (string, error)
 	Close()
 }

@@ -56,7 +56,7 @@ func (p *pgsql) Close() {
 	}
 }
 
-func (p *pgsql) RegisterUser(ctx context.Context, user models.RegisterUser) error {
+func (p *pgsql) RegisterUser(ctx context.Context, user models.Users) error {
 	result := p.pool.WithContext(ctx).Create(&user)
 	if result.Error != nil {
 		if strings.Contains(result.Error.Error(), "duplicate key value violates unique constraint") {
@@ -68,7 +68,7 @@ func (p *pgsql) RegisterUser(ctx context.Context, user models.RegisterUser) erro
 }
 
 func (p *pgsql) GetUserPassword(ctx context.Context, email string) (string, error) {
-	var user models.RegisterUser
+	var user models.Users
 	err := p.pool.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

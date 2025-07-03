@@ -44,7 +44,7 @@ func (h *handler) post() func(c *gin.Context) {
 		)
 		lg.Debug("request received")
 
-		var user models.RegisterUser
+		var user models.Users
 		if err = c.ShouldBindJSON(&user); err != nil {
 			lg.Error("failed to bind request body", "error", err)
 			c.JSON(http.StatusBadRequest, gin.H{
