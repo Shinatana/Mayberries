@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -37,9 +37,6 @@ func NewDB(ctx context.Context, dbConfig *config.DatabaseOptions) (repo.DB, erro
 		return nil, fmt.Errorf("failed to get sql.DB from gorm DB: %w", err)
 	}
 
-	// вот тут вопрос! Я раньше делала это в misc.WithPGXv5Format. В Gorm это делать нельзя
-	// вопрос: куда это лучше убрать, не думаю, что этим conf тут место
-
 	configBD.СonfigureDBPool(sqlDB, dbConfig)
 
 	ctsSec, cancel := context.WithTimeout(ctx, initPingTimeout)
@@ -62,13 +59,11 @@ func (p *pgsql) Close() {
 func (p *pgsql) RegisterUser(ctx context.Context, user models.RegisterUser) error {
 	result := p.pool.WithContext(ctx).Create(&user)
 	if result.Error != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(result.Error, &pgErr) && pgErr.Code == "23505" {
+		if strings.Contains(result.Error.Error(), "duplicate key value violates unique constraint") {
 			return models.ErrDuplicateUser
 		}
 		return fmt.Errorf("failed to register user: %w", result.Error)
 	}
-
 	return nil
 }
 

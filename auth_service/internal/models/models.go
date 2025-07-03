@@ -7,13 +7,13 @@ import (
 )
 
 type User struct {
-	ID           uuid.UUID `json:"id"`
-	Email        string    `json:"email"`
-	Password     string    `json:"-"`
-	PasswordHash string    `json:"passwordHash"`
-	Name         string    `json:"name"`
+	ID           uuid.UUID `json:"id" gorm:"primaryKey"`
+	Email        string    `json:"email" gorm:"unique;not null"`
+	Password     string    `json:"-" gorm:"-"`
+	PasswordHash string    `json:"passwordHash" gorm:"column:password_hash;not null"`
+	Name         string    `json:"name" gorm:"not null"`
 	RoleID       int       `json:"roleId"`
-	CreatedAt    time.Time `json:"createdAt"`
+	CreatedAt    time.Time `json:"createdAt" gorm:"default:CURRENT_TIMESTAMP"`
 }
 
 type Role struct {

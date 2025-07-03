@@ -37,7 +37,7 @@ func App() error {
 	}
 	log.Debug(fmt.Sprintf("config: %+v", sanitizeConfig(*cfg)))
 
-	db, err := init_db(&cfg.DB)
+	db, err := init_db(&cfg.DB, &cfg.Migrate)
 	if err != nil {
 		return err
 	}

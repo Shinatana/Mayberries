@@ -24,10 +24,10 @@ func NewLoginHandler(db repo.DB) ginImpl.Router {
 }
 
 func (h *handler) Register(router gin.IRouter) {
-	router.GET("/auth/login", h.get())
+	router.GET("/auth/login", h.post())
 }
 
-func (h *handler) get() func(c *gin.Context) {
+func (h *handler) post() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var err error
 
