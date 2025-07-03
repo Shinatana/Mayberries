@@ -12,6 +12,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"auth_service/internal/conf/configBD"
 	"auth_service/internal/models"
 	"auth_service/pkg/config"
 	"auth_service/pkg/misc"
@@ -39,15 +40,7 @@ func NewDB(ctx context.Context, dbConfig *config.DatabaseOptions) (repo.DB, erro
 	// вот тут вопрос! Я раньше делала это в misc.WithPGXv5Format. В Gorm это делать нельзя
 	// вопрос: куда это лучше убрать, не думаю, что этим conf тут место
 
-	if dbConfig.MaxOpenConnections > 0 {
-		sqlDB.SetMaxOpenConns(dbConfig.MaxOpenConnections)
-	}
-	if dbConfig.MaxIdleConnections >= 0 {
-		sqlDB.SetMaxIdleConns(dbConfig.MaxIdleConnections)
-	}
-	if dbConfig.ConnMaxLifetime > 0 {
-		sqlDB.SetConnMaxLifetime(dbConfig.ConnMaxLifetime)
-	}
+	configBD.СonfigureDBPool(sqlDB, dbConfig)
 
 	ctsSec, cancel := context.WithTimeout(ctx, initPingTimeout)
 	defer cancel()
