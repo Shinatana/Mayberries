@@ -2,6 +2,7 @@ package register
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -52,6 +53,7 @@ func (h *handler) post() func(c *gin.Context) {
 			})
 			return
 		}
+		user.ID = uuid.New()
 
 		sUser := user
 		sUser.Password = "********"
