@@ -8,6 +8,7 @@ import (
 	requestid "auth_service/internal/http/gin/middlewares/request-id"
 	"auth_service/internal/http/gin/routes/auth/login"
 	register "auth_service/internal/http/gin/routes/v1/auth/reqister"
+	gojwt "auth_service/internal/jwt/go-jwt"
 	"auth_service/pkg/log"
 	"context"
 	"fmt"
@@ -37,10 +38,20 @@ func App() error {
 	}
 	log.Debug(fmt.Sprintf("config: %+v", sanitizeConfig(*cfg)))
 
-	db, err := init_db(&cfg.DB, &cfg.Migrate)
+	jwtHandler, err := gojwt.NewJwtHandler(&cfg.JWT)
 	if err != nil {
 		return err
 	}
+	log.Info("jwt keys loaded")
+	db, err := init_db(&cfg.DB)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		db.Close()
+		log.Info("closed database connection")
+	}()
+
 	defer func() {
 		db.Close()
 		log.Info("closed database connection")
@@ -55,7 +66,7 @@ func App() error {
 	)
 
 	ginServer.AddRouters(
-		login.NewLoginHandler(db),
+		login.NewLoginHandler(db, jwtHandler),
 		register.NewRegisterHandler(db),
 	)
 

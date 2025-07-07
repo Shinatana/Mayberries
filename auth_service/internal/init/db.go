@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-func init_db(dbOptions *config.DatabaseOptions, dbMigrate *config.MigrationOptions) (repo.DB, error) {
+func init_db(dbOptions *config.DatabaseOptions) (repo.DB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbOptions.InitTimeout)
 	defer cancel()
 

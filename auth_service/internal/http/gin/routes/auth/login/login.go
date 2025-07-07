@@ -1,6 +1,7 @@
 package login
 
 import (
+	"auth_service/internal/jwt"
 	"auth_service/internal/repo"
 	"errors"
 	"log/slog"
@@ -16,15 +17,15 @@ import (
 )
 
 type handler struct {
-	db repo.DB
+	db  repo.DB
+	jwt jwt.Handler
 }
 
-func NewLoginHandler(db repo.DB) ginImpl.Router {
-	return &handler{db: db}
+func NewLoginHandler(db repo.DB, jwt jwt.Handler) ginImpl.Router {
+	return &handler{db: db, jwt: jwt}
 }
-
 func (h *handler) Register(router gin.IRouter) {
-	router.GET("/auth/login", h.post())
+	router.POST("/auth/login", h.post())
 }
 
 func (h *handler) post() func(c *gin.Context) {
@@ -67,13 +68,25 @@ func (h *handler) post() func(c *gin.Context) {
 			return
 		}
 
+		accessToken, refreshToken, err := h.jwt.GenerateTokenPair(email)
+		if err != nil {
+			lg.Error("failed to generate token pair", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"token_type": "bearer",
+			"access_token":       accessToken,
+			"token_type":         "bearer",
+			"expires_in":         h.jwt.GetTokenLifetime(),
+			"refresh_token":      refreshToken,
+			"refresh_expires_in": h.jwt.GetRefreshTokenLifetime(),
 		})
 
 		lg.Info("login successful", "email", email)
 
 	}
+
 }
 
 func basicAuth(c *gin.Context, lg *slog.Logger) (email string, pwd string, err error) {

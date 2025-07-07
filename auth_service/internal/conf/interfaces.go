@@ -9,6 +9,7 @@ type Config struct {
 	Log     config.LoggerOptions    `mapstructure:"log"`
 	DB      config.DatabaseOptions  `mapstructure:"db"`
 	Migrate config.MigrationOptions `mapstructure:"migrate"`
+	JWT     config.JwtOptions       `mapstructure:"jwt"`
 }
 
 type Loader interface {

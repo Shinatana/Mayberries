@@ -31,7 +31,6 @@ func JWTMiddleware(secret string) func(next http.Handler) http.Handler {
 			tokenStr := parts[1]
 
 			token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-				// Можно добавить проверку метода подписи, например:
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, http.ErrAbortHandler
 				}
@@ -42,7 +41,6 @@ func JWTMiddleware(secret string) func(next http.Handler) http.Handler {
 				return
 			}
 
-			// В контекст можно положить пользовательские данные из токена
 			ctx := context.WithValue(r.Context(), userCtxKey, token.Claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
