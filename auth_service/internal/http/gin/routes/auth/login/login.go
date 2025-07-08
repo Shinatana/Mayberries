@@ -1,6 +1,7 @@
 package login
 
 import (
+	"auth_service/internal/hash"
 	"auth_service/internal/jwt"
 	"auth_service/internal/repo"
 	"errors"
@@ -17,8 +18,9 @@ import (
 )
 
 type handler struct {
-	db  repo.DB
-	jwt jwt.Handler
+	db     repo.DB
+	jwt    jwt.Handler
+	hasher hash.Hasher
 }
 
 func NewLoginHandler(db repo.DB, jwt jwt.Handler) ginImpl.Router {
@@ -46,27 +48,37 @@ func (h *handler) post() func(c *gin.Context) {
 		)
 		lg.Debug("request received")
 
-		email, _, err := basicAuth(c, lg)
+		email, pwd, err := basicAuth(c, lg)
 		if err != nil {
 			lg.Error("basic auth error", "error", err)
 			c.Status(http.StatusUnauthorized)
 			return
 		}
 
-		_, err = h.db.GetUserPassword(c.Request.Context(), email)
+		dbPasswordHash, err := h.db.GetUserPassword(c.Request.Context(), email)
 		if err != nil {
 			if errors.Is(err, models.ErrUserNotFound) {
 				lg.Error("user not found")
-				c.Status(http.StatusUnauthorized)
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": "user not found",
+				})
 				return
 			}
 
 			lg.Error("db query error", "error", err, "email", email)
+
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
+				"error": "internal server error",
 			})
 			return
 		}
+
+		if err = h.hasher.CheckHash(pwd, dbPasswordHash); err != nil {
+			lg.Error("invalid password", "email", email)
+			c.Status(http.StatusUnauthorized)
+			return
+		}
+		lg.Debug("password validated successfully", "email", email)
 
 		accessToken, refreshToken, err := h.jwt.GenerateTokenPair(email)
 		if err != nil {

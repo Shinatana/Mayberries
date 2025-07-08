@@ -1,6 +1,7 @@
 package register
 
 import (
+	"auth_service/internal/hash"
 	"errors"
 	"github.com/google/uuid"
 	"net/http"
@@ -16,7 +17,8 @@ import (
 )
 
 type handler struct {
-	db repo.DB
+	db     repo.DB
+	hasher hash.Hasher
 }
 
 func NewRegisterHandler(db repo.DB) ginImpl.Router {
@@ -66,6 +68,18 @@ func (h *handler) post() func(c *gin.Context) {
 			})
 			return
 		}
+
+		hashedPassword, err := h.hasher.Hash(user.Password)
+		if err != nil {
+			lg.Error("failed to hash password", "error", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "internal server error",
+			})
+			return
+		}
+		user.Password = hashedPassword
+
+		lg.Debug("password hashed successfully", "email", user.Email)
 
 		if err = h.db.RegisterUser(c.Request.Context(), user); err != nil {
 			if errors.Is(err, models.ErrDuplicateUser) {
