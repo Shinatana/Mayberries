@@ -26,7 +26,7 @@ const (
 	defaultIdleTimeout        = 1 * time.Minute
 	defaultHttpMaxHeaderBytes = 8 * 1024
 	defaultConfigKey          = "config"
-	defaultConfigFilePath     = "./conf.toml"
+	defaultConfigFilePath     = "config.yaml"
 
 	defaultLogLevel  = "warn"
 	defaultLogFormat = "json"

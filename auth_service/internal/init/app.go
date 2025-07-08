@@ -8,6 +8,7 @@ import (
 	requestid "auth_service/internal/http/gin/middlewares/request-id"
 	"auth_service/internal/http/gin/routes/auth/login"
 	register "auth_service/internal/http/gin/routes/v1/auth/reqister"
+	"auth_service/internal/http/gin/routes/v2/auth/refresh"
 	gojwt "auth_service/internal/jwt/go-jwt"
 	"auth_service/pkg/log"
 	"context"
@@ -68,6 +69,7 @@ func App() error {
 	ginServer.AddRouters(
 		login.NewLoginHandler(db, jwtHandler),
 		register.NewRegisterHandler(db),
+		refresh.NewRefreshHandler(db, jwtHandler),
 	)
 
 	handler := ginServer.Build()
