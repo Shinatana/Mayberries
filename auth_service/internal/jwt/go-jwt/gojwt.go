@@ -17,7 +17,9 @@ import (
 )
 
 const (
-	leeway = 30 * time.Second
+	leeway           = 30 * time.Second
+	TokenTypeAccess  = "access"
+	TokenTypeRefresh = "refresh"
 )
 
 type jwtHandler struct {
@@ -78,7 +80,7 @@ func NewJwtHandler(cfg *config.JwtOptions) (localjwt.Handler, error) {
 	}, nil
 }
 
-func (j *jwtHandler) GenerateTokenPair(sub string) (accessToken, refreshToken string, err error) {
+func (j *jwtHandler) GenerateTokenPair(sub string, roles, permissions []string) (accessToken, refreshToken string, err error) {
 	accessTokenID := misc.GenerateUUID()
 	refreshTokenID := misc.GenerateUUID()
 	timeNow := time.Now()
@@ -92,7 +94,9 @@ func (j *jwtHandler) GenerateTokenPair(sub string) (accessToken, refreshToken st
 			NotBefore: jwt.NewNumericDate(timeNow),
 			ID:        accessTokenID,
 		},
-		TokenType: "access",
+		TokenType:   TokenTypeAccess,
+		Roles:       roles,
+		Permissions: permissions,
 	}
 
 	refreshClaims := localjwt.RefreshClaims{
@@ -104,7 +108,7 @@ func (j *jwtHandler) GenerateTokenPair(sub string) (accessToken, refreshToken st
 			NotBefore: jwt.NewNumericDate(timeNow),
 			ID:        refreshTokenID,
 		},
-		TokenType: "refresh",
+		TokenType: TokenTypeRefresh,
 	}
 
 	accessJWT := jwt.NewWithClaims(jwt.SigningMethodEdDSA, accessClaims)
@@ -164,7 +168,7 @@ func (j *jwtHandler) VerifyAccessToken(tokenString string) (*localjwt.AccessClai
 	}
 
 	// Additional validation
-	if claims.TokenType != "access" {
+	if claims.TokenType != TokenTypeAccess {
 		return nil, models.ErrInvalidTokenType
 	}
 
@@ -204,7 +208,7 @@ func (j *jwtHandler) VerifyRefreshToken(tokenString string) (*localjwt.RefreshCl
 	}
 
 	// Additional validation
-	if claims.TokenType != "refresh" {
+	if claims.TokenType != TokenTypeRefresh {
 		return nil, models.ErrInvalidTokenType
 	}
 

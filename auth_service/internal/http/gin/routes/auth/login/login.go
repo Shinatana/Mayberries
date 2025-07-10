@@ -23,8 +23,8 @@ type handler struct {
 	hasher hash.Hasher
 }
 
-func NewLoginHandler(db repo.DB, jwt jwt.Handler) ginImpl.Router {
-	return &handler{db: db, jwt: jwt}
+func NewLoginHandler(db repo.DB, hasher hash.Hasher, jwt jwt.Handler) ginImpl.Router {
+	return &handler{db: db, hasher: hasher, jwt: jwt}
 }
 func (h *handler) Register(router gin.IRouter) {
 	router.POST("/auth/login", h.post())
@@ -49,6 +49,7 @@ func (h *handler) post() func(c *gin.Context) {
 		lg.Debug("request received")
 
 		email, pwd, err := basicAuth(c, lg)
+		lg.Info("request received", "email", email, "password", pwd)
 		if err != nil {
 			lg.Error("basic auth error", "error", err)
 			c.Status(http.StatusUnauthorized)
@@ -56,6 +57,7 @@ func (h *handler) post() func(c *gin.Context) {
 		}
 
 		dbPasswordHash, err := h.db.GetUserPassword(c.Request.Context(), email)
+		lg.Debug("hashed password generated", "hashedPassword", dbPasswordHash)
 		if err != nil {
 			if errors.Is(err, models.ErrUserNotFound) {
 				lg.Error("user not found")
@@ -73,14 +75,41 @@ func (h *handler) post() func(c *gin.Context) {
 			return
 		}
 
-		if err = h.hasher.CheckHash(pwd, dbPasswordHash); err != nil {
+		if err = h.hasher.CheckHash(dbPasswordHash, pwd); err != nil {
 			lg.Error("invalid password", "email", email)
 			c.Status(http.StatusUnauthorized)
 			return
 		}
 		lg.Debug("password validated successfully", "email", email)
 
-		accessToken, refreshToken, err := h.jwt.GenerateTokenPair(email)
+		userID, err := h.db.GetUserIDByEmail(c.Request.Context(), email)
+		if err != nil {
+			lg.Error("failed to get userID by email", "error", err, "email", email)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		userID, err = h.db.GetUserIDByEmail(c.Request.Context(), email)
+		if err != nil {
+			lg.Error("failed to get userID by email", "error", err, "email", email)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		roles, err := h.db.GetUserRoles(c.Request.Context(), userID)
+		if err != nil {
+			lg.Error("failed to get roles", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		permissions, err := h.db.GetUserPermissions(c.Request.Context(), userID)
+		if err != nil {
+			lg.Error("failed to get permissions", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		accessToken, refreshToken, err := h.jwt.GenerateTokenPair(email, roles, permissions)
 		if err != nil {
 			lg.Error("failed to generate token pair", "error", err)
 			c.Status(http.StatusInternalServerError)

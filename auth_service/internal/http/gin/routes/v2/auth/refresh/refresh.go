@@ -50,13 +50,36 @@ func (h *handler) post() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 			return
 		}
+
 		claims, err := h.jwt.VerifyRefreshToken(req.RefreshToken)
 		if err != nil {
 			lg.Error("invalid refresh token", "error", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
 			return
 		}
-		accessToken, refreshToken, err := h.jwt.GenerateTokenPair(claims.Subject)
+
+		userID, err := h.db.GetUserIDByEmail(c.Request.Context(), claims.Subject)
+		if err != nil {
+			lg.Error("failed to get userID by email", "error", err, "email", claims.Subject)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+
+		roles, err := h.db.GetUserRoles(c.Request.Context(), userID)
+		if err != nil {
+			lg.Error("failed to get roles", "error", err, "userID", userID)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+
+		permissions, err := h.db.GetUserPermissions(c.Request.Context(), userID)
+		if err != nil {
+			lg.Error("failed to get permissions", "error", err, "userID", userID)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+
+		accessToken, refreshToken, err := h.jwt.GenerateTokenPair(claims.Subject, roles, permissions)
 		if err != nil {
 			lg.Error("invalid refresh token", "error", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})

@@ -1,4 +1,4 @@
-FROM golang:1.24.1-alpine AS builder
+FROM --platform=linux/arm64 golang:1.24.1-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -13,14 +13,18 @@ RUN go mod download
 
 COPY cmd ./cmd
 
-RUN CGO_ENABLED=0 GOOS=darwin go build -o main ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o main ./cmd/main.go
 
 FROM alpine:latest
 
-WORKDIR /app
+RUN apk --no-cache add wget
 
-COPY --from=builder /app/main .
+COPY --from=builder /app/main /app/main
+
+RUN chmod +x /app/main
+
+WORKDIR /app
 
 EXPOSE 8080
 
-ENTRYPOINT ["./main"]
+ENTRYPOINT ["/app/main"]

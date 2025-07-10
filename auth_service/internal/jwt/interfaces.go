@@ -8,7 +8,9 @@ import (
 
 type AccessClaims struct {
 	jwt.RegisteredClaims
-	TokenType string `json:"type"`
+	TokenType   string   `json:"type"`
+	Roles       []string `json:"roles,omitempty"`
+	Permissions []string `json:"permissions,omitempty"`
 }
 
 type RefreshClaims struct {
@@ -17,7 +19,7 @@ type RefreshClaims struct {
 }
 
 type Handler interface {
-	GenerateTokenPair(sub string) (accessToken, refreshToken string, err error)
+	GenerateTokenPair(sub string, roles, permissions []string) (accessToken, refreshToken string, err error)
 	VerifyRefreshToken(tokenString string) (*RefreshClaims, error)
 	VerifyAccessToken(tokenString string) (*AccessClaims, error)
 	GetTokenLifetime() time.Duration

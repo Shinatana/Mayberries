@@ -21,8 +21,8 @@ type handler struct {
 	hasher hash.Hasher
 }
 
-func NewRegisterHandler(db repo.DB) ginImpl.Router {
-	return &handler{db: db}
+func NewRegisterHandler(db repo.DB, hasher hash.Hasher) ginImpl.Router {
+	return &handler{db: db, hasher: hasher}
 }
 
 func (h *handler) Register(router gin.IRouter) {
@@ -57,10 +57,6 @@ func (h *handler) post() func(c *gin.Context) {
 		}
 		user.ID = uuid.New()
 
-		sUser := user
-		sUser.Password = "********"
-		lg.Debug("request body", "body", sUser)
-
 		if err = val.ValidateStruct(user); err != nil {
 			lg.Error("failed to validate request body", "error", err)
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -77,9 +73,20 @@ func (h *handler) post() func(c *gin.Context) {
 			})
 			return
 		}
-		user.Password = hashedPassword
+		user.PasswordHash = hashedPassword
 
 		lg.Debug("password hashed successfully", "email", user.Email)
+
+		var role models.Role
+		err = h.db.GetRoleByName(c.Request.Context(), "user", &role)
+		if err != nil {
+			lg.Error("default role 'user' not found", "error", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "failed to assign default role",
+			})
+			return
+		}
+		user.RoleID = role.ID
 
 		if err = h.db.RegisterUser(c.Request.Context(), user); err != nil {
 			if errors.Is(err, models.ErrDuplicateUser) {
@@ -87,7 +94,7 @@ func (h *handler) post() func(c *gin.Context) {
 				c.Status(http.StatusConflict)
 				return
 			}
-			lg.Error("failed to register user", "error", err)
+			lg.Error("failed to info user", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}

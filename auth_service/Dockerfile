@@ -1,4 +1,4 @@
-FROM golang:1.24.1-alpine AS builder
+FROM --platform=linux/arm64 golang:1.24.1-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -22,6 +22,8 @@ FROM alpine:latest
 RUN apk --no-cache add wget
 
 COPY --from=builder /app/main /app/main
+
+RUN chmod +x /app/main
 
 WORKDIR /app
 

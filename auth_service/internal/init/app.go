@@ -3,12 +3,14 @@ package init
 import (
 	internalConf "auth_service/internal/conf"
 	"auth_service/internal/conf/loader"
+	hashImpl "auth_service/internal/hash/hasher"
 	"auth_service/internal/http/gin"
 	"auth_service/internal/http/gin/middlewares/recovery"
 	requestid "auth_service/internal/http/gin/middlewares/request-id"
 	"auth_service/internal/http/gin/routes/auth/login"
-	register "auth_service/internal/http/gin/routes/v1/auth/reqister"
+	"auth_service/internal/http/gin/routes/v1/auth/register"
 	"auth_service/internal/http/gin/routes/v2/auth/refresh"
+	"auth_service/internal/http/gin/routes/v3/auth/info"
 	gojwt "auth_service/internal/jwt/go-jwt"
 	"auth_service/pkg/log"
 	"context"
@@ -44,14 +46,11 @@ func App() error {
 		return err
 	}
 	log.Info("jwt keys loaded")
+
 	db, err := init_db(&cfg.DB)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		db.Close()
-		log.Info("closed database connection")
-	}()
 
 	defer func() {
 		db.Close()
@@ -66,10 +65,13 @@ func App() error {
 		requestid.Middleware(),
 	)
 
+	hasher := hashImpl.NewHasher(hashImpl.MinHashCost)
+
 	ginServer.AddRouters(
-		login.NewLoginHandler(db, jwtHandler),
-		register.NewRegisterHandler(db),
+		login.NewLoginHandler(db, hasher, jwtHandler),
+		register.NewRegisterHandler(db, hasher),
 		refresh.NewRefreshHandler(db, jwtHandler),
+		info.TakeInfoMe(db, jwtHandler),
 	)
 
 	handler := ginServer.Build()

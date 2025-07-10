@@ -1,5 +1,6 @@
 services:
   auth_service:
+    platform: linux/arm64
     build:
       context: ./auth_service
       dockerfile: Dockerfile
@@ -19,6 +20,7 @@ services:
       - backend
 
   background_worker_service:
+    platform: linux/arm64
     build:
       context: ./background_worker_service
       dockerfile: Dockerfile
@@ -27,14 +29,26 @@ services:
       - backend
 
   catalog_service:
+    platform: linux/arm64
     build:
       context: ./catalog_service
       dockerfile: Dockerfile
     container_name: catalog_service
+    depends_on:
+      - postgres
+    environment:
+      - HTTP_HOST=0.0.0.0
+      - HTTP_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=myuser
+      - DB_PWD=secret
+      - DB_DATABASE=mydb
     networks:
       - backend
 
   infrastructure:
+    platform: linux/arm64
     build:
       context: ./infrastructure
       dockerfile: Dockerfile
@@ -43,6 +57,7 @@ services:
       - backend
 
   order_service:
+    platform: linux/arm64
     build:
       context: ./order_service
       dockerfile: Dockerfile
@@ -53,6 +68,7 @@ services:
       - backend
 
   reviews_service:
+    platform: linux/arm64
     build:
       context: ./reviews_service
       dockerfile: Dockerfile
