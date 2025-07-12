@@ -3,6 +3,7 @@ package login
 import (
 	"auth_service/internal/hash"
 	"auth_service/internal/jwt"
+	"auth_service/internal/jwt/codec"
 	"auth_service/internal/repo"
 	"errors"
 	"log/slog"
@@ -57,7 +58,6 @@ func (h *handler) post() func(c *gin.Context) {
 		}
 
 		dbPasswordHash, err := h.db.GetUserPassword(c.Request.Context(), email)
-		lg.Debug("hashed password generated", "hashedPassword", dbPasswordHash)
 		if err != nil {
 			if errors.Is(err, models.ErrUserNotFound) {
 				lg.Error("user not found")
@@ -75,7 +75,7 @@ func (h *handler) post() func(c *gin.Context) {
 			return
 		}
 
-		if err = h.hasher.CheckHash(dbPasswordHash, pwd); err != nil {
+		if err = h.hasher.CheckHash(pwd, dbPasswordHash); err != nil {
 			lg.Error("invalid password", "email", email)
 			c.Status(http.StatusUnauthorized)
 			return
@@ -83,12 +83,6 @@ func (h *handler) post() func(c *gin.Context) {
 		lg.Debug("password validated successfully", "email", email)
 
 		userID, err := h.db.GetUserIDByEmail(c.Request.Context(), email)
-		if err != nil {
-			lg.Error("failed to get userID by email", "error", err, "email", email)
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-		userID, err = h.db.GetUserIDByEmail(c.Request.Context(), email)
 		if err != nil {
 			lg.Error("failed to get userID by email", "error", err, "email", email)
 			c.Status(http.StatusInternalServerError)
@@ -115,6 +109,9 @@ func (h *handler) post() func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
+
+		accessToken = codec.Encode(accessToken)
+		refreshToken = codec.Encode(refreshToken)
 
 		c.JSON(http.StatusOK, gin.H{
 			"access_token":       accessToken,

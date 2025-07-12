@@ -154,3 +154,18 @@ func (p *pgsql) GetUserIDByEmail(ctx context.Context, email string) (string, err
 	}
 	return user.ID, nil
 }
+
+func (p *pgsql) GetUserByID(ctx context.Context, userID string) (*models.Users, error) {
+	var user models.Users
+
+	err := p.pool.WithContext(ctx).
+		Where("id = ?", userID).
+		First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, models.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+	}
+	return &user, nil
+}

@@ -70,17 +70,39 @@ func (h *handler) get() func(c *gin.Context) {
 			return
 		}
 
-		roles, err := h.db.GetUserRoles(c.Request.Context(), userID)
+		var user *models.Users
+
+		user, err = h.db.GetUserByID(c.Request.Context(), userID)
 		if err != nil {
+			if errors.Is(err, models.ErrUserNotFound) {
+				lg.Warn("user not found by ID", "userID", userID)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+				return
+			}
+			lg.Error("failed to get user by ID", "error", err, "userID", userID)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+
+		role, err := h.db.GetUserRoles(c.Request.Context(), userID)
+		if err != nil {
+			if errors.Is(err, models.ErrUserNotFound) {
+				lg.Warn("user not found by userID", "userID", userID)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+				return
+			}
 			lg.Error("failed to get user roles", "error", err, "userID", userID)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"id":    userID,
-			"email": email,
-			"roles": roles,
+			"createdAt": user.CreatedAt,
+			"roleId":    user.RoleID,
+			"roles":     role,
+			"email":     user.Email,
+			"name":      user.Name,
+			"id":        userID,
 		})
 
 		lg.Info("user info returned successfully", "userID", userID)

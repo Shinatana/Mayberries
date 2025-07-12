@@ -4,6 +4,7 @@ import (
 	ginImpl "auth_service/internal/http/gin"
 	requestid "auth_service/internal/http/gin/middlewares/request-id"
 	"auth_service/internal/jwt"
+	"auth_service/internal/jwt/codec"
 	"auth_service/internal/repo"
 	"auth_service/pkg/log"
 	"auth_service/pkg/val"
@@ -51,7 +52,14 @@ func (h *handler) post() gin.HandlerFunc {
 			return
 		}
 
-		claims, err := h.jwt.VerifyRefreshToken(req.RefreshToken)
+		tokenString, err := codec.Decode(req.RefreshToken)
+		if err != nil {
+			lg.Error("invalid refresh token", "error", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
+			return
+		}
+
+		claims, err := h.jwt.VerifyRefreshToken(tokenString)
 		if err != nil {
 			lg.Error("invalid refresh token", "error", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
@@ -85,6 +93,10 @@ func (h *handler) post() gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
 			return
 		}
+
+		accessToken = codec.Encode(accessToken)
+		refreshToken = codec.Encode(refreshToken)
+
 		c.JSON(200, gin.H{
 			"access_token":       accessToken,
 			"token_type":         "bearer",

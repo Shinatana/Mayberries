@@ -38,24 +38,12 @@ func (h *hasher) Hash(pwd string) (string, error) {
 	return conv.BytesToStr(hashPwd), nil
 }
 
-func (h *hasher) CheckHash(hash, pwd string) error {
-	log.Debug("CheckHash called",
-		"hash", hash,
-		"pwd", pwd,
-		"hash_len", len(hash),
-		"pwd_len", len(pwd),
-		"hash_bytes_hex", fmt.Sprintf("% x", []byte(hash)),
-		"pwd_bytes_hex", fmt.Sprintf("% x", []byte(pwd)),
-	)
-
+func (h *hasher) CheckHash(pwd, hash string) error {
 	hashBytes := conv.StrToBytes(hash)
 	pwdBytes := conv.StrToBytes(pwd)
 
-	log.Debug("Before bcrypt.CompareHashAndPassword",
-		"hash_bytes_len", len(hashBytes),
-		"pwd_bytes_len", len(pwdBytes),
-	)
-
+	tpmPwdHash, _ := bcrypt.GenerateFromPassword(pwdBytes, h.cost)
+	_ = tpmPwdHash
 	err := bcrypt.CompareHashAndPassword(hashBytes, pwdBytes)
 
 	if err != nil {
@@ -63,10 +51,6 @@ func (h *hasher) CheckHash(hash, pwd string) error {
 	} else {
 		log.Debug("password match successful")
 	}
-
-	log.Debug("CheckHash finished",
-		"error", err,
-	)
 
 	return err
 }
