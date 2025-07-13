@@ -65,8 +65,8 @@ type DatabaseOptions struct {
 }
 
 type JwtOptions struct {
-	ED25519KeyFile       string        `mapstructure:"25519key" validate:"required,file"`
-	ED25519PubFile       string        `mapstructure:"25519pub" validate:"required,file"`
+	ED25519KeyFile       string        `mapstructure:"ed25519key" validate:"required,file"`
+	ED25519PubFile       string        `mapstructure:"ed25519pub" validate:"required,file"`
 	Issuer               string        `mapstructure:"issuer" validate:"required,min=3"`
 	TokenLifetime        time.Duration `mapstructure:"token_lifetime" validate:"min=1h,max=24h"`
 	RefreshTokenLifetime time.Duration `mapstructure:"refresh_token_lifetime" validate:"min=24h,max=336h"`
