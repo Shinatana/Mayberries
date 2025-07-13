@@ -7,13 +7,6 @@ import (
 
 var ErrUnexpectedType = errors.New("unexpected type for flag")
 
-// HttpOptions expected usage:
-//
-//	type Config struct {
-//	   ...
-//	   Http HttpOptions `mapstructure:"http"`
-//	   ...
-//	}
 type HttpOptions struct {
 	Host              string        `mapstructure:"host" validate:"required,hostname_rfc1123|ip_addr"`
 	Port              int           `mapstructure:"port" validate:"required,gt=1023,lt=65536"`
@@ -28,6 +21,12 @@ type HttpOptions struct {
 type LoggerOptions struct {
 	Format string `mapstructure:"format" validate:"oneof=json text"`
 	Level  string `mapstructure:"level" validate:"oneof=debug info warn error"`
+}
+
+type MigrationOptions struct {
+	Version          int           `mapstructure:"version" validate:"gt=-2"`
+	MigrationFiles   string        `mapstructure:"dir" validate:"omitempty"`
+	MigrationTimeout time.Duration `mapstructure:"timeout" validate:"min=1s,max=60s"`
 }
 
 type DatabaseOptions struct {

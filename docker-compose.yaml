@@ -18,6 +18,14 @@ services:
       - MIGRATE_DIR=/Users/konoko/Documents/golang/Mayberries/internal/repo/migrate
     networks:
       - backend
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "auth_service"
+    volumes:
+      - ./auth_service/logger:/app/logger
 
   background_worker_service:
     platform: linux/arm64
@@ -63,7 +71,7 @@ services:
       dockerfile: Dockerfile
     container_name: order_service
     ports:
-      - "8080:8080"
+      - "8081:8081"
     networks:
       - backend
 
@@ -87,6 +95,43 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    networks:
+      - backend
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=S3cr3tK3yForEncryptionAndMustBeLongEnough12345!
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - backend
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.4
+    container_name: logstash
+    volumes:
+      - /Users/konoko/Documents/golang/Mayberries/infrastructure/logstash/pipeline/:/usr/share/logstash/pipeline/
+      - ./auth_service/logger:/logs/auth_service
+    depends_on:
+      - elasticsearch
+    ports:
+      - "12201:12201/udp"
     networks:
       - backend
 
