@@ -42,8 +42,6 @@ func (h *hasher) CheckHash(pwd, hash string) error {
 	hashBytes := conv.StrToBytes(hash)
 	pwdBytes := conv.StrToBytes(pwd)
 
-	tpmPwdHash, _ := bcrypt.GenerateFromPassword(pwdBytes, h.cost)
-	_ = tpmPwdHash
 	err := bcrypt.CompareHashAndPassword(hashBytes, pwdBytes)
 
 	if err != nil {

@@ -169,3 +169,22 @@ func (p *pgsql) GetUserByID(ctx context.Context, userID string) (*models.Users, 
 	}
 	return &user, nil
 }
+
+func (p *pgsql) GetUserByEmail(ctx context.Context, email string) (*models.Users, error) {
+	var user models.Users
+
+	err := p.pool.WithContext(ctx).
+		Preload("Roles").
+		Preload("Permissions").
+		Where("email = ?", email).
+		First(&user).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, models.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}

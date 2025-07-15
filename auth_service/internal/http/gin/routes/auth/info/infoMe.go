@@ -8,7 +8,6 @@ import (
 	"auth_service/internal/models"
 	"auth_service/internal/repo"
 	"auth_service/pkg/log"
-	"auth_service/pkg/val"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -32,17 +31,13 @@ func (h *handler) get() func(c *gin.Context) {
 		var err error
 
 		requestID := c.GetHeader(requestid.Header)
-		err = val.ValidateWithTag(requestID, "required,uuid4")
-		if err != nil {
-			log.Warn("invalid request id provided", requestid.Header, requestID)
-		}
-		c.Header(requestid.Header, requestID)
 
 		lg := log.Copy().With(
 			"requestID", requestID,
 			"method", c.Request.Method,
 			"path", c.Request.URL.Path,
 		)
+
 		lg.Debug("request received")
 
 		emailVal, exists := c.Get("email")

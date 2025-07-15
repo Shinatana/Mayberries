@@ -34,7 +34,7 @@ func (h *handler) Register(router gin.IRouter) {
 func (h *handler) post() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var err error
-		// проверь, пожалуйста. Мне кажется, я в middleware запуталась. Вроде правильно именно так
+
 		requestID := c.GetString(requestid.Header)
 
 		lg := log.Copy().With(
@@ -42,10 +42,10 @@ func (h *handler) post() func(c *gin.Context) {
 			"method", c.Request.Method,
 			"path", c.Request.URL.Path,
 		)
+
 		lg.Debug("request received")
 
 		email, pwd, err := basicAuth(c, lg)
-		lg.Info("request received", "email", email, "password", pwd)
 		if err != nil {
 			lg.Error("basic auth error", "error", err)
 			c.Status(http.StatusUnauthorized)

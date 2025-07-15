@@ -4,18 +4,11 @@ services:
     build:
       context: ./auth_service
       dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
     container_name: auth_service
     depends_on:
       - postgres
-    environment:
-      - HTTP_HOST=0.0.0.0
-      - HTTP_PORT=8080
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=myuser
-      - DB_PWD=secret
-      - DB_DATABASE=mydb
-      - MIGRATE_DIR=/Users/konoko/Documents/golang/Mayberries/internal/repo/migrate
     networks:
       - backend
     logging:
@@ -26,6 +19,9 @@ services:
         tag: "auth_service"
     volumes:
       - ./auth_service/logger:/app/logger
+      - ./auth_service/config.yaml:/app/config.yaml:ro
+      - ./auth_service/keys:/app/keys:ro
+
 
   background_worker_service:
     platform: linux/arm64
@@ -44,14 +40,8 @@ services:
     container_name: catalog_service
     depends_on:
       - postgres
-    environment:
-      - HTTP_HOST=0.0.0.0
-      - HTTP_PORT=8080
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=myuser
-      - DB_PWD=secret
-      - DB_DATABASE=mydb
+    volumes:
+       - ./catalog_service/config.yaml:/app/config.yaml:ro
     networks:
       - backend
 

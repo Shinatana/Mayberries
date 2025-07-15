@@ -13,7 +13,7 @@ log:
   level: debug
 
 db:
-  host: localhost
+  host: postgres
   port: 5432
   user: myuser
   pwd: secret
@@ -24,3 +24,9 @@ db:
   max_lifetime: 5m
   init_timeout: 2s
 
+jwt:
+  ed25519key: ./keys/ed25519.key
+  ed25519pub: ./keys/ed25519.pub
+  issuer: mayberries-auth
+  token_lifetime: 1h
+  refresh_token_lifetime: 168h

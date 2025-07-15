@@ -34,11 +34,6 @@ func (h *handler) post() func(c *gin.Context) {
 		var err error
 
 		requestID := c.GetHeader(requestid.Header)
-		err = val.ValidateWithTag(requestID, "required,uuid4")
-		if err != nil {
-			log.Warn("invalid request id provided", requestid.Header, requestID)
-		}
-		c.Header(requestid.Header, requestID)
 
 		lg := log.Copy().With(
 			"requestID", requestID,
@@ -94,7 +89,7 @@ func (h *handler) post() func(c *gin.Context) {
 				c.Status(http.StatusConflict)
 				return
 			}
-			lg.Error("failed to info user", "error", err)
+			lg.Error("failed to register user", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
