@@ -21,7 +21,7 @@ func NewRefreshHandler(db repo.DB, jwt jwt.Handler) ginImpl.Router {
 }
 
 func (h *handler) Register(router gin.IRouter) {
-	router.POST("/auth/refresh", h.post())
+	router.POST("/refresh", h.post())
 }
 
 func (h *handler) post() gin.HandlerFunc {

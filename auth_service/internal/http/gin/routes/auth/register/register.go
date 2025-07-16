@@ -26,7 +26,7 @@ func NewRegisterHandler(db repo.DB, hasher hash.Hasher) ginImpl.Router {
 }
 
 func (h *handler) Register(router gin.IRouter) {
-	router.POST("/auth/register", h.post())
+	router.POST("/register", h.post())
 }
 
 func (h *handler) post() func(c *gin.Context) {

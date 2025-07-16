@@ -3,14 +3,6 @@ package init
 import (
 	internalConf "auth_service/internal/conf"
 	"auth_service/internal/conf/loader"
-	hashImpl "auth_service/internal/hash/hasher"
-	"auth_service/internal/http/gin"
-	"auth_service/internal/http/gin/middlewares/recovery"
-	requestid "auth_service/internal/http/gin/middlewares/request-id"
-	"auth_service/internal/http/gin/routes/auth/info"
-	"auth_service/internal/http/gin/routes/auth/login"
-	"auth_service/internal/http/gin/routes/auth/refresh"
-	"auth_service/internal/http/gin/routes/auth/register"
 	gojwt "auth_service/internal/jwt/go-jwt"
 	"auth_service/pkg/log"
 	"context"
@@ -58,25 +50,12 @@ func App() error {
 	}()
 	log.Info("connected to database")
 
-	ginServer := gin.NewGinServer()
-
-	ginServer.AddMiddleware(
-		recovery.Middleware(),
-		requestid.Middleware(),
+	httpClose := Http(
+		&cfg.Http,
+		Gin(db, jwtHandler),
 	)
 
-	hasher := hashImpl.NewHasher(hashImpl.MinHashCost)
-
-	ginServer.AddRouters(
-		login.NewLoginHandler(db, hasher, jwtHandler),
-		register.NewRegisterHandler(db, hasher),
-		refresh.NewRefreshHandler(db, jwtHandler),
-		info.TakeInfoMe(db, jwtHandler),
-	)
-
-	handler := ginServer.Build()
-
-	closer := Http(&cfg.Http, handler)
+	defer httpClose()
 
 	// Graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -84,6 +63,5 @@ func App() error {
 
 	<-ctx.Done()
 
-	closer() // Shutdown сервер
 	return nil
 }

@@ -29,10 +29,7 @@ func (h *handler) get() func(c *gin.Context) {
 		var err error
 
 		requestID := c.GetHeader(requestid.Header)
-		err = val.ValidateWithTag(requestID, "required,uuid4")
-		if err != nil {
-			log.Warn("invalid request id provided", requestid.Header, requestID)
-		}
+
 		c.Header(requestid.Header, requestID)
 
 		lg := log.Copy().With(

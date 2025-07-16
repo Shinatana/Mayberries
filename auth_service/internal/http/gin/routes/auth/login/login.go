@@ -28,7 +28,7 @@ func NewLoginHandler(db repo.DB, hasher hash.Hasher, jwt jwt.Handler) ginImpl.Ro
 	return &handler{db: db, hasher: hasher, jwt: jwt}
 }
 func (h *handler) Register(router gin.IRouter) {
-	router.POST("/auth/login", h.post())
+	router.POST("/login", h.post())
 }
 
 func (h *handler) post() func(c *gin.Context) {

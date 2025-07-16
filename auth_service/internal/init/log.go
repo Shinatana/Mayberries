@@ -8,10 +8,10 @@ import (
 
 func Log(options *config.LoggerOptions) {
 	handlerOptions := map[string]*slog.HandlerOptions{
-		"debug": {Level: slog.LevelDebug},
-		"info":  {Level: slog.LevelInfo},
-		"warn":  {Level: slog.LevelWarn},
-		"error": {Level: slog.LevelError},
+		"debug":    {Level: slog.LevelDebug},
+		"infoUser": {Level: slog.LevelInfo},
+		"warn":     {Level: slog.LevelWarn},
+		"error":    {Level: slog.LevelError},
 	}
 
 	switch options.Format {

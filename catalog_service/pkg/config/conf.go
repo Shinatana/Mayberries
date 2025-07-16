@@ -20,7 +20,7 @@ type HttpOptions struct {
 
 type LoggerOptions struct {
 	Format string `mapstructure:"format" validate:"oneof=json text"`
-	Level  string `mapstructure:"level" validate:"oneof=debug info warn error"`
+	Level  string `mapstructure:"level" validate:"oneof=debug infoUser warn error"`
 }
 
 type MigrationOptions struct {
@@ -41,4 +41,11 @@ type DatabaseOptions struct {
 	MaxIdleConnections int           `mapstructure:"max_idle" validate:"gte=0"`
 	ConnMaxLifetime    time.Duration `mapstructure:"max_lifetime" validate:"min=1s,max=1h"`
 	InitTimeout        time.Duration `mapstructure:"init_timeout" validate:"min=1s,max=60s"`
+}
+type RedisOptions struct {
+	Host        string        `mapstructure:"host" validate:"required,hostname_rfc1123|ip_addr"`
+	Port        int           `mapstructure:"port" validate:"gt=0,lte=65535"`
+	Password    string        `mapstructure:"password" validate:"omitempty"`
+	DB          int           `mapstructure:"db" validate:"gte=0"`
+	InitTimeout time.Duration `mapstructure:"init_timeout" validate:"min=1s,max=60s"`
 }

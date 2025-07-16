@@ -1,6 +1,6 @@
 http:
   host: 0.0.0.0
-  port: 8080
+  port: 8081
   max_header_bytes: 8192
   read_timeout: 1s
   write_timeout: 1s
@@ -13,7 +13,7 @@ log:
   level: debug
 
 db:
-  host: postgres
+  host: localhost
   port: 5432
   user: myuser
   pwd: secret
@@ -30,3 +30,10 @@ jwt:
   issuer: mayberries-auth
   token_lifetime: 1h
   refresh_token_lifetime: 168h
+
+redis:
+  host: redis
+  port: 6379
+  password: ""
+  db: 0
+  init_timeout: 2s

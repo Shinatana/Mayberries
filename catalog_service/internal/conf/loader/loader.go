@@ -20,7 +20,7 @@ const (
 	typeInt
 	typeDuration
 
-	viperEnvPrefix = "mb_auth"
+	viperEnvPrefix = "mb_cat"
 
 	defaultTimeout            = 1 * time.Second
 	defaultIdleTimeout        = 1 * time.Minute
@@ -43,6 +43,9 @@ const (
 
 	defaultJwtTokenLifetime        = 1 * time.Hour
 	defaultJwtRefreshTokenLifetime = 24 * time.Hour
+
+	defaultRedisvalue       = "6379"
+	defaultRedisInitTimeout = 2 * time.Second
 )
 
 type viperKey struct {
@@ -166,7 +169,7 @@ func genViperKeys() []viperKey {
 			name:         "log.level",
 			cmdlineName:  "log-level",
 			defaultValue: defaultLogLevel,
-			usage:        "Log level (debug info warn error)",
+			usage:        "Log level (debug infoUser warn error)",
 			typeCode:     typeString,
 		},
 		// Migration options
@@ -304,6 +307,42 @@ func genViperKeys() []viperKey {
 			defaultValue: nil,
 			usage:        "",
 			typeCode:     typeString,
+		},
+		// Redis options
+		{
+			name:         "redis.host",
+			cmdlineName:  "redis-host",
+			defaultValue: nil,
+			usage:        "Redis host address",
+			typeCode:     typeString,
+		},
+		{
+			name:         "redis.port",
+			cmdlineName:  "redis-port",
+			defaultValue: defaultRedisvalue,
+			usage:        "Redis port",
+			typeCode:     typeInt,
+		},
+		{
+			name:         "redis.password",
+			cmdlineName:  "redis-password",
+			defaultValue: "",
+			usage:        "Redis password (if any)",
+			typeCode:     typeString,
+		},
+		{
+			name:         "redis.db",
+			cmdlineName:  "redis-db",
+			defaultValue: 0,
+			usage:        "Redis database number",
+			typeCode:     typeInt,
+		},
+		{
+			name:         "redis.init_timeout",
+			cmdlineName:  "redis-init-timeout",
+			defaultValue: defaultRedisInitTimeout,
+			usage:        "Timeout for Redis client initialization",
+			typeCode:     typeDuration,
 		},
 	}
 }

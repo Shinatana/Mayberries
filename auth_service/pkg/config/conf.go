@@ -27,7 +27,7 @@ type HttpOptions struct {
 
 type LoggerOptions struct {
 	Format string `mapstructure:"format" validate:"oneof=json text"`
-	Level  string `mapstructure:"level" validate:"oneof=debug info warn error"`
+	Level  string `mapstructure:"level" validate:"oneof=debug infoUser warn error"`
 }
 
 // MigrationOptions expected usage:pwd

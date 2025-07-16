@@ -166,7 +166,7 @@ func genViperKeys() []viperKey {
 			name:         "log.level",
 			cmdlineName:  "log-level",
 			defaultValue: defaultLogLevel,
-			usage:        "Log level (debug info warn error)",
+			usage:        "Log level (debug infoUser warn error)",
 			typeCode:     typeString,
 		},
 		// Migration options

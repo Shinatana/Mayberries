@@ -43,6 +43,18 @@ func App() error {
 	}()
 	log.Info("connected to database")
 
+	redisClient, err := init_redis(&cfg.Redis)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		//я не уверена, как тут правильно обработать эту ошибку.
+		//И не уверена тут ли вообще я должна ее обрабатывать
+		redisClient.Close()
+		log.Info("closed redis connection")
+	}()
+	log.Info("connected to redis")
+
 	httpClose := Http(
 		&cfg.Http,
 		Gin(db),

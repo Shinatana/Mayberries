@@ -30,10 +30,7 @@ func (h *handler) delete() func(c *gin.Context) {
 		var err error
 
 		requestID := c.GetHeader(requestid.Header)
-		err = val.ValidateWithTag(requestID, "required,uuid4")
-		if err != nil {
-			log.Warn("invalid request id provided", requestid.Header, requestID)
-		}
+
 		c.Header(requestid.Header, requestID)
 
 		lg := log.Copy().With(
@@ -64,8 +61,8 @@ func (h *handler) delete() func(c *gin.Context) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 				return
 			}
-			lg.Error("failed to delete product", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete product"})
+			lg.Error("failed to deleteRole product", "error", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to deleteRole product"})
 			return
 		}
 

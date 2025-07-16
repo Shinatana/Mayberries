@@ -1,4 +1,4 @@
-GOOSE_MIGRATION_DIR=/Users/konoko/Documents/golang/Mayberries/catalog_service/internal/repo/migrate
+GOOSE_MIGRATION_DIR=catalog_service/internal/repo/migrate
 GOOSE_DRIVER=postgres
 GOOSE_DBSTRING=postgres://myuser:secret@localhost:5432/mydb?sslmode=disable&search_path=public
 

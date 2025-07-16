@@ -9,6 +9,7 @@ services:
     container_name: auth_service
     depends_on:
       - postgres
+      - redis
     networks:
       - backend
     logging:
@@ -40,6 +41,7 @@ services:
     container_name: catalog_service
     depends_on:
       - postgres
+      - redis
     volumes:
        - ./catalog_service/config.yaml:/app/config.yaml:ro
     networks:
@@ -122,6 +124,14 @@ services:
       - elasticsearch
     ports:
       - "12201:12201/udp"
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
     networks:
       - backend
 

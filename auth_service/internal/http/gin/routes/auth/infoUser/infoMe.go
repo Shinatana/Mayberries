@@ -1,4 +1,4 @@
-package info
+package infoUser
 
 import (
 	ginImpl "auth_service/internal/http/gin"
@@ -23,7 +23,7 @@ func TakeInfoMe(db repo.DB, jwt jwt.Handler) ginImpl.Router {
 }
 
 func (h *handler) Register(router gin.IRouter) {
-	router.GET("/auth/me", middleAuth.GetAuthMiddleware(h.jwt), h.get())
+	router.GET("/me", middleAuth.GetAuthMiddleware(h.jwt), h.get())
 }
 
 func (h *handler) get() func(c *gin.Context) {
@@ -100,7 +100,7 @@ func (h *handler) get() func(c *gin.Context) {
 			"id":        userID,
 		})
 
-		lg.Info("user info returned successfully", "userID", userID)
+		lg.Info("user infoUser returned successfully", "userID", userID)
 
 	}
 }

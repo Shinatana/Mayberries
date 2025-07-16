@@ -65,7 +65,7 @@ func Debug(msg string, args ...any) {
 	logger.Debug(msg, args...)
 }
 
-// Info logs a message at info level with the given key-value pairs as attributes.
+// Info logs a message at infoUser level with the given key-value pairs as attributes.
 func Info(msg string, args ...any) {
 	mtx.RLock()
 	defer mtx.RUnlock()

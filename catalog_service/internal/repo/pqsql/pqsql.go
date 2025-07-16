@@ -29,7 +29,7 @@ func NewDB(ctx context.Context, dbConfig *config.DatabaseOptions) (repo.DB, erro
 		return nil, fmt.Errorf("failed to open gorm DB: %w", err)
 	}
 
-	sqlDB, err := gormDB.DB() // Получаем sql.DB для низкоуровневых операций, например ping
+	sqlDB, err := gormDB.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sql.DB from gorm DB: %w", err)
 	}
@@ -61,7 +61,7 @@ func (p *pgsql) GetProducts(ctx context.Context) ([]models.Products, error) {
 		Find(&products).
 		Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch products: %w", err)
+		return nil, fmt.Errorf("failed to fetch handlers_products: %w", err)
 	}
 	return products, nil
 }
@@ -72,7 +72,7 @@ func (p *pgsql) PostProducts(ctx context.Context, products models.Products) erro
 		if strings.Contains(result.Error.Error(), "duplicate key value violates unique constraint") {
 			return models.ErrDuplicateProducts
 		}
-		return fmt.Errorf("failed to info products: %w", result.Error)
+		return fmt.Errorf("failed to infoUser handlers_products: %w", result.Error)
 	}
 	return nil
 }
@@ -93,10 +93,24 @@ func (p *pgsql) DeleteProducts(ctx context.Context, productId uuid.UUID) error {
 		ID: productId,
 	})
 	if result.Error != nil {
-		return fmt.Errorf("failed to delete products: %w", result.Error)
+		return fmt.Errorf("failed to deleteRole handlers_products: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
 		return fmt.Errorf("product not found")
 	}
 	return nil
+}
+
+func (p *pgsql) GetCategories(ctx context.Context) ([]models.Categories, error) {
+	var categories []models.Categories
+
+	err := p.pool.WithContext(ctx).
+		Model(&models.Categories{}).
+		Find(&categories).
+		Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch categories: %w", err)
+	}
+
+	return categories, nil
 }

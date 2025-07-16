@@ -34,10 +34,7 @@ func (h *handler) post() func(c *gin.Context) {
 		var err error
 
 		requestID := c.GetHeader(requestid.Header)
-		err = val.ValidateWithTag(requestID, "required,uuid4")
-		if err != nil {
-			log.Warn("invalid request id provided", requestid.Header, requestID)
-		}
+
 		c.Header(requestid.Header, requestID)
 
 		lg := log.Copy().With(
@@ -76,7 +73,7 @@ func (h *handler) post() func(c *gin.Context) {
 				})
 				return
 			}
-			lg.Error("failed to post products", "error", err)
+			lg.Error("failed to post handlers_products", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}

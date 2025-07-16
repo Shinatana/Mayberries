@@ -20,6 +20,47 @@ func (f MiddlewareFunc) Handler() gin.HandlerFunc {
 	return gin.HandlerFunc(f)
 }
 
+// Group represents a group of routes with optional middlewares
+type Group struct {
+	path        string
+	middlewares []Middleware
+	routers     []Router
+}
+
+// NewGroup creates a new route group
+func NewGroup(path string) *Group {
+	return &Group{
+		path:        path,
+		middlewares: make([]Middleware, 0),
+		routers:     make([]Router, 0),
+	}
+}
+
+// AddMiddleware adds middlewares to the group
+func (g *Group) AddMiddleware(middlewares ...Middleware) *Group {
+	g.middlewares = append(g.middlewares, middlewares...)
+	return g
+}
+
+// AddRouters adds routers to the group
+func (g *Group) AddRouters(routers ...Router) *Group {
+	g.routers = append(g.routers, routers...)
+	return g
+}
+
+// Register implements the Router interface
+func (g *Group) Register(router gin.IRouter) {
+	group := router.Group(g.path)
+
+	for _, m := range g.middlewares {
+		group.Use(m.Handler())
+	}
+
+	for _, r := range g.routers {
+		r.Register(group)
+	}
+}
+
 // Server represents a gin HTTP server
 type Server struct {
 	engine      *gin.Engine
@@ -50,14 +91,12 @@ func (s *Server) AddRouters(routers ...Router) *Server {
 
 // Build configures and returns the underlying gin.Engine
 func (s *Server) Build() *gin.Engine {
-	// Apply global middlewares
-	for _, middleware := range s.middlewares {
-		s.engine.Use(middleware.Handler())
+	for _, m := range s.middlewares {
+		s.engine.Use(m.Handler())
 	}
 
-	// Register routers
-	for _, router := range s.routers {
-		router.Register(s.engine)
+	for _, r := range s.routers {
+		r.Register(s.engine)
 	}
 
 	return s.engine
