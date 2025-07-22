@@ -52,12 +52,10 @@ func (g *Group) AddRouters(routers ...Router) *Group {
 func (g *Group) Register(router gin.IRouter) {
 	group := router.Group(g.path)
 
-	// Apply middlewares
-	for _, middleware := range g.middlewares {
-		group.Use(middleware.Handler())
+	for _, m := range g.middlewares {
+		group.Use(m.Handler())
 	}
 
-	// Register routers
 	for _, r := range g.routers {
 		r.Register(group)
 	}
@@ -93,14 +91,12 @@ func (s *Server) AddRouters(routers ...Router) *Server {
 
 // Build configures and returns the underlying gin.Engine
 func (s *Server) Build() *gin.Engine {
-	// Apply global middlewares
-	for _, middleware := range s.middlewares {
-		s.engine.Use(middleware.Handler())
+	for _, m := range s.middlewares {
+		s.engine.Use(m.Handler())
 	}
 
-	// Register routers
-	for _, router := range s.routers {
-		router.Register(s.engine)
+	for _, r := range s.routers {
+		r.Register(s.engine)
 	}
 
 	return s.engine

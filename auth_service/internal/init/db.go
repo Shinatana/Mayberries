@@ -30,19 +30,6 @@ func init_db(dbOptions *config.DatabaseOptions) (repo.DB, error) {
 		return nil, fmt.Errorf("failed to ping DB for migrations: %w", err)
 	}
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin migration transaction: %w", err)
-	}
-
-	log.Info("⏫ Starting migration")
-
-	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("failed to commit migration transaction: %w", err)
-	}
-
-	log.Info("✅ Migration complete")
-
 	db, err := pgsql.NewDB(ctx, dbOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pgx DB pool: %w", err)

@@ -1,24 +1,31 @@
 services:
   auth_service:
+    platform: linux/arm64
     build:
       context: ./auth_service
       dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
     container_name: auth_service
     depends_on:
       - postgres
-    environment:
-      - HTTP_HOST=0.0.0.0
-      - HTTP_PORT=8080
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=myuser
-      - DB_PWD=secret
-      - DB_DATABASE=mydb
-      - MIGRATE_DIR=/Users/konoko/Documents/golang/Mayberries/internal/repo/migrate
+      - redis
     networks:
       - backend
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "auth_service"
+    volumes:
+      - ./auth_service/logger:/app/logger
+      - ./auth_service/config.yaml:/app/config.yaml:ro
+      - ./auth_service/keys:/app/keys:ro
+
 
   background_worker_service:
+    platform: linux/arm64
     build:
       context: ./background_worker_service
       dockerfile: Dockerfile
@@ -27,14 +34,21 @@ services:
       - backend
 
   catalog_service:
+    platform: linux/arm64
     build:
       context: ./catalog_service
       dockerfile: Dockerfile
     container_name: catalog_service
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+       - ./catalog_service/config.yaml:/app/config.yaml:ro
     networks:
       - backend
 
   infrastructure:
+    platform: linux/arm64
     build:
       context: ./infrastructure
       dockerfile: Dockerfile
@@ -43,16 +57,18 @@ services:
       - backend
 
   order_service:
+    platform: linux/arm64
     build:
       context: ./order_service
       dockerfile: Dockerfile
     container_name: order_service
     ports:
-      - "8080:8080"
+      - "8081:8081"
     networks:
       - backend
 
   reviews_service:
+    platform: linux/arm64
     build:
       context: ./reviews_service
       dockerfile: Dockerfile
@@ -71,6 +87,51 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    networks:
+      - backend
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=S3cr3tK3yForEncryptionAndMustBeLongEnough12345!
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - backend
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.4
+    container_name: logstash
+    volumes:
+      - /Users/konoko/Documents/golang/Mayberries/infrastructure/logstash/pipeline/:/usr/share/logstash/pipeline/
+      - ./auth_service/logger:/logs/auth_service
+    depends_on:
+      - elasticsearch
+    ports:
+      - "12201:12201/udp"
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
     networks:
       - backend
 

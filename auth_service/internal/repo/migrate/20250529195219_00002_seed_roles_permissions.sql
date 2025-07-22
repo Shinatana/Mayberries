@@ -6,10 +6,10 @@ INSERT INTO roles (name, description) VALUES
 ('admin', 'Administrator with full access');
 
 INSERT INTO permissions (code, description) VALUES
-                                                ('product.create', 'Permission to create products'),
-                                                ('product.read', 'Permission to read products'),
-                                                ('product.update', 'Permission to update products'),
-                                                ('product.delete', 'Permission to delete products');
+                                                ('product.create', 'Permission to create handlers_products'),
+                                                ('product.read', 'Permission to read handlers_products'),
+                                                ('product.update', 'Permission to update handlers_products'),
+                                                ('product.deleteRole', 'Permission to deleteRole handlers_products');
 
 
 INSERT INTO roles_permissions (role_id, permission_id)

@@ -55,7 +55,7 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: User info
+          description: User infoUser
           content:
             application/json:
               schema:

@@ -26,7 +26,7 @@ const (
 	defaultIdleTimeout        = 1 * time.Minute
 	defaultHttpMaxHeaderBytes = 8 * 1024
 	defaultConfigKey          = "config"
-	defaultConfigFilePath     = "./conf.toml"
+	defaultConfigFilePath     = "config.yaml"
 
 	defaultLogLevel  = "warn"
 	defaultLogFormat = "json"
@@ -40,6 +40,9 @@ const (
 	defaultMaxIdleConnections = 20
 	defaultConnMaxLifetime    = 5 * time.Minute
 	defaultInitTimeout        = 2 * time.Second
+
+	defaultJwtTokenLifetime        = 1 * time.Hour
+	defaultJwtRefreshTokenLifetime = 24 * time.Hour
 )
 
 type viperKey struct {
@@ -163,7 +166,7 @@ func genViperKeys() []viperKey {
 			name:         "log.level",
 			cmdlineName:  "log-level",
 			defaultValue: defaultLogLevel,
-			usage:        "Log level (debug info warn error)",
+			usage:        "Log level (debug infoUser warn error)",
 			typeCode:     typeString,
 		},
 		// Migration options
@@ -265,6 +268,42 @@ func genViperKeys() []viperKey {
 			defaultValue: defaultInitTimeout,
 			usage:        "",
 			typeCode:     typeDuration,
+		},
+		// JWT options
+		{
+			name:         "jwt.25519key",
+			cmdlineName:  "jwt-25519key",
+			defaultValue: nil,
+			usage:        "Path to Ed25519 private key file for JWT signing",
+			typeCode:     typeString,
+		},
+		{
+			name:         "jwt.25519pub",
+			cmdlineName:  "jwt-25519pub",
+			defaultValue: nil,
+			usage:        "Path to Ed25519 public key file for JWT verification",
+			typeCode:     typeString,
+		},
+		{
+			name:         "jwt.token_lifetime",
+			cmdlineName:  "jwt-token-lifetime",
+			defaultValue: defaultJwtTokenLifetime,
+			usage:        "",
+			typeCode:     typeDuration,
+		},
+		{
+			name:         "jwt.refresh_token_lifetime",
+			cmdlineName:  "jwt-refresh-token-lifetime",
+			defaultValue: defaultJwtRefreshTokenLifetime,
+			usage:        "",
+			typeCode:     typeDuration,
+		},
+		{
+			name:         "jwt.issuer",
+			cmdlineName:  "jwt-issuer",
+			defaultValue: nil,
+			usage:        "",
+			typeCode:     typeString,
 		},
 	}
 }

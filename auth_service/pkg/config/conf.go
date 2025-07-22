@@ -27,7 +27,7 @@ type HttpOptions struct {
 
 type LoggerOptions struct {
 	Format string `mapstructure:"format" validate:"oneof=json text"`
-	Level  string `mapstructure:"level" validate:"oneof=debug info warn error"`
+	Level  string `mapstructure:"level" validate:"oneof=debug infoUser warn error"`
 }
 
 // MigrationOptions expected usage:pwd
@@ -64,9 +64,12 @@ type DatabaseOptions struct {
 	InitTimeout        time.Duration `mapstructure:"init_timeout" validate:"min=1s,max=60s"`
 }
 
-type JWTOptions struct {
-	Secret   string `mapstructure:"secret" validate:"required"`
-	TokenTTL int    `mapstructure:"token_ttl" validate:"required,gt=0"` // в минутах
+type JwtOptions struct {
+	ED25519KeyFile       string        `mapstructure:"ed25519key" validate:"required,file"`
+	ED25519PubFile       string        `mapstructure:"ed25519pub" validate:"required,file"`
+	Issuer               string        `mapstructure:"issuer" validate:"required,min=3"`
+	TokenLifetime        time.Duration `mapstructure:"token_lifetime" validate:"min=1h,max=24h"`
+	RefreshTokenLifetime time.Duration `mapstructure:"refresh_token_lifetime" validate:"min=24h,max=336h"`
 }
 
 type RedisOptions struct {

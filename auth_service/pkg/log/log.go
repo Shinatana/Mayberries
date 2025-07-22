@@ -8,16 +8,28 @@ import (
 )
 
 const (
-	defaultLevel = slog.LevelWarn
+	defaultLevel       = slog.LevelWarn
+	defaultServiceName = "auth_service"
 )
 
 var (
-	defaultIO = os.Stdout
-	logger    *slog.Logger
-	mtx       sync.RWMutex
+	defaultIO   io.Writer = os.Stdout
+	logger      *slog.Logger
+	mtx         sync.RWMutex
+	serviceName string
+
+	logFilePath = "logger/auth_service.log"
 )
 
 func init() {
+	f, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		// если файл открыть не удалось, логгер будет писать только в stdout
+		defaultIO = os.Stdout
+	} else {
+		defaultIO = io.MultiWriter(os.Stdout, f)
+	}
+
 	logger = slog.New(
 		slog.NewJSONHandler(
 			defaultIO,
@@ -41,6 +53,8 @@ func Configure(w io.Writer, opts *slog.HandlerOptions, json bool) {
 		opts = &slog.HandlerOptions{Level: defaultLevel}
 	}
 
+	serviceName = defaultServiceName
+
 	if json {
 		logger = slog.New(slog.NewJSONHandler(w, opts))
 	} else {
@@ -54,7 +68,7 @@ func Copy() *slog.Logger {
 	mtx.RLock()
 	defer mtx.RUnlock()
 
-	return slog.New(logger.Handler())
+	return slog.New(logger.Handler()).With("service", serviceName)
 }
 
 // Debug logs a message at debug level with the given key-value pairs as attributes.
@@ -62,15 +76,15 @@ func Debug(msg string, args ...any) {
 	mtx.RLock()
 	defer mtx.RUnlock()
 
-	logger.Debug(msg, args...)
+	logger.With("service", serviceName).Debug(msg, args...)
 }
 
-// Info logs a message at info level with the given key-value pairs as attributes.
+// Info logs a message at infoUser level with the given key-value pairs as attributes.
 func Info(msg string, args ...any) {
 	mtx.RLock()
 	defer mtx.RUnlock()
 
-	logger.Info(msg, args...)
+	logger.With("service", serviceName).Info(msg, args...)
 }
 
 // Warn logs a message at warn level with the given key-value pairs as attributes.
@@ -78,7 +92,7 @@ func Warn(msg string, args ...any) {
 	mtx.RLock()
 	defer mtx.RUnlock()
 
-	logger.Warn(msg, args...)
+	logger.With("service", serviceName).Warn(msg, args...)
 }
 
 // Error logs a message at error level with the given key-value pairs as attributes.
@@ -86,5 +100,5 @@ func Error(msg string, args ...any) {
 	mtx.RLock()
 	defer mtx.RUnlock()
 
-	logger.Error(msg, args...)
+	logger.With("service", serviceName).Error(msg, args...)
 }

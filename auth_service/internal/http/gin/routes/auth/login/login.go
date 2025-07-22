@@ -1,6 +1,9 @@
 package login
 
 import (
+	"auth_service/internal/hash"
+	"auth_service/internal/jwt"
+	"auth_service/internal/jwt/codec"
 	"auth_service/internal/repo"
 	"errors"
 	"log/slog"
@@ -16,64 +19,107 @@ import (
 )
 
 type handler struct {
-	db repo.DB
+	db     repo.DB
+	jwt    jwt.Handler
+	hasher hash.Hasher
 }
 
-func NewLoginHandler(db repo.DB) ginImpl.Router {
-	return &handler{db: db}
+func NewLoginHandler(db repo.DB, hasher hash.Hasher, jwt jwt.Handler) ginImpl.Router {
+	return &handler{db: db, hasher: hasher, jwt: jwt}
 }
-
 func (h *handler) Register(router gin.IRouter) {
-	router.GET("/auth/login", h.get())
+	router.POST("/login", h.post())
 }
 
-func (h *handler) get() func(c *gin.Context) {
+func (h *handler) post() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var err error
 
-		requestID := c.GetHeader(requestid.Header)
-		err = val.ValidateWithTag(requestID, "required,uuid4")
-		if err != nil {
-			log.Warn("invalid request id provided", requestid.Header, requestID)
-		}
-		c.Header(requestid.Header, requestID)
+		requestID := c.GetString(requestid.Header)
 
 		lg := log.Copy().With(
 			"requestID", requestID,
 			"method", c.Request.Method,
 			"path", c.Request.URL.Path,
 		)
+
 		lg.Debug("request received")
 
-		email, _, err := basicAuth(c, lg)
+		email, pwd, err := basicAuth(c, lg)
 		if err != nil {
 			lg.Error("basic auth error", "error", err)
 			c.Status(http.StatusUnauthorized)
 			return
 		}
 
-		_, err = h.db.GetUserPassword(c.Request.Context(), email)
+		dbPasswordHash, err := h.db.GetUserPassword(c.Request.Context(), email)
 		if err != nil {
 			if errors.Is(err, models.ErrUserNotFound) {
 				lg.Error("user not found")
-				c.Status(http.StatusUnauthorized)
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": "user not found",
+				})
 				return
 			}
 
 			lg.Error("db query error", "error", err, "email", email)
+
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
+				"error": "internal server error",
 			})
 			return
 		}
 
+		if err = h.hasher.CheckHash(pwd, dbPasswordHash); err != nil {
+			lg.Error("invalid password", "email", email)
+			c.Status(http.StatusUnauthorized)
+			return
+		}
+		lg.Debug("password validated successfully", "email", email)
+
+		userID, err := h.db.GetUserIDByEmail(c.Request.Context(), email)
+		if err != nil {
+			lg.Error("failed to get userID by email", "error", err, "email", email)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		roles, err := h.db.GetUserRoles(c.Request.Context(), userID)
+		if err != nil {
+			lg.Error("failed to get roles", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		permissions, err := h.db.GetUserPermissions(c.Request.Context(), userID)
+		if err != nil {
+			lg.Error("failed to get permissions", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		accessToken, refreshToken, err := h.jwt.GenerateTokenPair(email, roles, permissions)
+		if err != nil {
+			lg.Error("failed to generate token pair", "error", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		accessToken = codec.Encode(accessToken)
+		refreshToken = codec.Encode(refreshToken)
+
 		c.JSON(http.StatusOK, gin.H{
-			"token_type": "bearer",
+			"access_token":       accessToken,
+			"token_type":         "bearer",
+			"expires_in":         h.jwt.GetTokenLifetime(),
+			"refresh_token":      refreshToken,
+			"refresh_expires_in": h.jwt.GetRefreshTokenLifetime(),
 		})
 
 		lg.Info("login successful", "email", email)
 
 	}
+
 }
 
 func basicAuth(c *gin.Context, lg *slog.Logger) (email string, pwd string, err error) {

@@ -1,0 +1,39 @@
+http:
+  host: 0.0.0.0
+  port: 8081
+  max_header_bytes: 8192
+  read_timeout: 1s
+  write_timeout: 1s
+  idle_timeout: 1m
+  read_header_timeout: 1s
+  shutdown_timeout: 1s
+
+log:
+  format: json
+  level: debug
+
+db:
+  host: localhost
+  port: 5432
+  user: myuser
+  pwd: secret
+  database: mydb
+  ssl: disable
+  max_open: 100
+  max_idle: 20
+  max_lifetime: 5m
+  init_timeout: 2s
+
+jwt:
+  ed25519key: ./keys/ed25519.key
+  ed25519pub: ./keys/ed25519.pub
+  issuer: mayberries-auth
+  token_lifetime: 1h
+  refresh_token_lifetime: 168h
+
+redis:
+  host: redis
+  port: 6379
+  password: ""
+  db: 0
+  init_timeout: 2s

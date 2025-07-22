@@ -3,11 +3,7 @@ package init
 import (
 	internalConf "auth_service/internal/conf"
 	"auth_service/internal/conf/loader"
-	"auth_service/internal/http/gin"
-	"auth_service/internal/http/gin/middlewares/recovery"
-	requestid "auth_service/internal/http/gin/middlewares/request-id"
-	"auth_service/internal/http/gin/routes/auth/login"
-	register "auth_service/internal/http/gin/routes/v1/auth/reqister"
+	gojwt "auth_service/internal/jwt/go-jwt"
 	"auth_service/pkg/log"
 	"context"
 	"fmt"
@@ -37,31 +33,29 @@ func App() error {
 	}
 	log.Debug(fmt.Sprintf("config: %+v", sanitizeConfig(*cfg)))
 
+	jwtHandler, err := gojwt.NewJwtHandler(&cfg.JWT)
+	if err != nil {
+		return err
+	}
+	log.Info("jwt keys loaded")
+
 	db, err := init_db(&cfg.DB)
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		db.Close()
 		log.Info("closed database connection")
 	}()
 	log.Info("connected to database")
 
-	ginServer := gin.NewGinServer()
-
-	ginServer.AddMiddleware(
-		recovery.Middleware(),
-		requestid.Middleware(),
+	httpClose := Http(
+		&cfg.Http,
+		Gin(db, jwtHandler),
 	)
 
-	ginServer.AddRouters(
-		login.NewLoginHandler(db),
-		register.NewRegisterHandler(db),
-	)
-
-	handler := ginServer.Build()
-
-	closer := Http(&cfg.Http, handler)
+	defer httpClose()
 
 	// Graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -69,6 +63,5 @@ func App() error {
 
 	<-ctx.Done()
 
-	closer() // Shutdown сервер
 	return nil
 }
