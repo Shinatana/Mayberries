@@ -1,3 +1,5 @@
+-- +goose Up
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE orders (
@@ -19,7 +21,6 @@ CREATE TABLE order_items (
 );
 
 -- +goose Down
--- SQL in section 'Down' is executed when this migration is rolled back
 
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;

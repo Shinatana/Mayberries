@@ -65,7 +65,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "8083:8080"
+      - "8084:8080"
     networks:
       - backend
     volumes:

@@ -7,15 +7,14 @@ WORKDIR /app
 ENV GOPROXY=https://proxy.golang.org,direct
 ENV GOSUMDB=off
 
-COPY --from=shared-builder /shared ./shared
 
 COPY go.mod go.sum ./
+COPY shared /shared
 
 RUN go mod download
 
-COPY cmd ./cmd
-COPY internal ./internal
-
+COPY order_service/cmd ./cmd
+COPY order_service/internal ./internal
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o main ./cmd/main.go
 

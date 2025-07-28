@@ -1,9 +1,9 @@
 package misc
 
 import (
-	"Mayberries1/shared/pkg/config"
-	"Mayberries1/shared/pkg/log"
 	"fmt"
+	"github.com/mayberries/shared/pkg/config"
+	"github.com/mayberries/shared/pkg/log"
 	"net/url"
 	"os"
 	"os/signal"
