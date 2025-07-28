@@ -62,10 +62,15 @@ services:
       context: ./order_service
       dockerfile: Dockerfile
     container_name: order_service
+    depends_on:
+      - postgres
     ports:
-      - "8081:8081"
+      - "8083:8080"
     networks:
       - backend
+    volumes:
+      - ./shared:/app/shared:ro
+      - ./order_service/config.yaml:/app/config.yaml:ro
 
   reviews_service:
     platform: linux/arm64
