@@ -7,9 +7,8 @@ WORKDIR /app
 ENV GOPROXY=https://proxy.golang.org,direct
 ENV GOSUMDB=off
 
-
-COPY go.mod go.sum ./
-COPY shared /shared
+COPY order_service/go.mod order_service/go.sum ./
+COPY shared ../shared
 
 RUN go mod download
 

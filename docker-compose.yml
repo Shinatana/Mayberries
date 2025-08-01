@@ -59,8 +59,8 @@ services:
   order_service:
     platform: linux/arm64
     build:
-      context: ./order_service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./order_service/Dockerfile
     container_name: order_service
     depends_on:
       - postgres
