@@ -1,4 +1,4 @@
-package post_orders
+package handlers
 
 import (
 	"errors"
@@ -8,14 +8,14 @@ import (
 	ginImpl "order_service/internal/http/gin"
 	requestid "order_service/internal/http/middlewares/request-id"
 	"order_service/internal/models"
-	"order_service/internal/service/order"
+	"order_service/internal/service"
 )
 
 type handler struct {
-	svc order.Service
+	svc service.Service
 }
 
-func PostOrders(svc order.Service) ginImpl.Router {
+func PostOrders(svc service.Service) ginImpl.Router {
 	return &handler{svc: svc}
 }
 
@@ -45,10 +45,10 @@ func (h *handler) post() func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 			return
 		}
-		err = h.svc.CreateOrder(c.Request.Context(), order)
+		id, err := h.svc.CreateOrder(c.Request.Context(), order)
 		if err != nil {
 			if errors.Is(err, models.ErrDuplicateOrder) {
-				lg.Warn("product already exists", "id", order.ID)
+				lg.Warn("order already exists", "id", order.ID)
 				c.JSON(http.StatusConflict, gin.H{"error": "order already exists"})
 				return
 			}
@@ -57,12 +57,12 @@ func (h *handler) post() func(c *gin.Context) {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
-			lg.Error("failed to create product", "error", err)
+			lg.Error("failed to create order", "error", err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		lg.Info("order created")
-		c.Status(http.StatusCreated)
+		lg.Info("order created", "order_id", id)
+		c.JSON(http.StatusCreated, gin.H{"id": id})
 
 	}
 }

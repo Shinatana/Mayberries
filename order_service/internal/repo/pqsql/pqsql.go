@@ -3,6 +3,7 @@ package pqsql
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/mayberries/shared/pkg/config"
 	"github.com/mayberries/shared/pkg/misc"
 	"gorm.io/driver/postgres"
@@ -52,13 +53,13 @@ func (p *pgsql) Close() {
 	}
 }
 
-func (p *pgsql) CreateOrder(ctx context.Context, order models.Order) error {
+func (p *pgsql) CreateOrder(ctx context.Context, order models.Order) (uuid.UUID, error) {
 	result := p.pool.WithContext(ctx).Create(&order)
 	if result.Error != nil {
 		if strings.Contains(result.Error.Error(), "duplicate key value violates unique constraint") {
-			return models.ErrDuplicateOrder
+			return uuid.Nil, models.ErrDuplicateOrder
 		}
-		return fmt.Errorf("failed to infoUser handlers_products: %w", result.Error)
+		return uuid.Nil, fmt.Errorf("failed to create order: %w", result.Error)
 	}
-	return nil
+	return order.ID, nil
 }

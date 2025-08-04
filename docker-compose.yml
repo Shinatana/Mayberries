@@ -70,7 +70,7 @@ services:
       - backend
     volumes:
       - ./shared:/app/shared:ro
-      - ./order_service/config.yaml:/app/config.yaml:ro
+      - ./order_service/.env:/app/.env:ro
 
   reviews_service:
     platform: linux/arm64

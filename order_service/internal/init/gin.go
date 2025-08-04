@@ -2,18 +2,18 @@ package init
 
 import (
 	"github.com/gin-gonic/gin"
-	"order_service/internal/handlers/handlers_orders/post_orders"
+	"order_service/internal/handlers"
 	ginImpl "order_service/internal/http/gin"
 	"order_service/internal/http/middlewares/recovery"
-	"order_service/internal/http/middlewares/request-id"
-	"order_service/internal/service/order"
+	requestid "order_service/internal/http/middlewares/request-id"
+	"order_service/internal/service"
 )
 
 const (
 	OrdersPath = "/orders/"
 )
 
-func Gin(svc order.Service) *gin.Engine {
+func Gin(svc service.Service) *gin.Engine {
 	ginRouter := ginImpl.NewGinServer()
 
 	// Middleware
@@ -30,10 +30,10 @@ func Gin(svc order.Service) *gin.Engine {
 	return ginRouter.Build()
 }
 
-func postOrders(path string, svc order.Service) *ginImpl.Group {
+func postOrders(path string, svc service.Service) *ginImpl.Group {
 	Orders := ginImpl.NewGroup(path)
 
-	router := post_orders.PostOrders(svc)
+	router := handlers.PostOrders(svc)
 
 	Orders.AddRouters(router)
 

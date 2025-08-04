@@ -1,4 +1,4 @@
-package repo
+package service
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"order_service/internal/models"
 )
 
-type DB interface {
+type Service interface {
 	CreateOrder(ctx context.Context, order models.Order) (uuid.UUID, error)
-	Close()
 }

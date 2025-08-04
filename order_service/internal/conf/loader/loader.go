@@ -1,60 +1,20 @@
 package loader
 
 import (
-	"errors"
 	"fmt"
-	pkgConf "github.com/mayberries/shared/pkg/config"
-	"github.com/mayberries/shared/pkg/val"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-	"order_service/internal/conf"
 	"os"
+	"strconv"
 	"strings"
 	"time"
-)
 
-type typeCode int
+	"github.com/joho/godotenv"
+	"github.com/mayberries/shared/pkg/val"
+	"order_service/internal/conf"
+)
 
 const (
-	typeString typeCode = iota
-	typeInt
-	typeDuration
-
-	viperEnvPrefix = "mb_cat"
-
-	defaultTimeout            = 1 * time.Second
-	defaultIdleTimeout        = 1 * time.Minute
-	defaultHttpMaxHeaderBytes = 8 * 1024
-	defaultConfigKey          = "config"
-	defaultConfigFilePath     = "config.yaml"
-
-	defaultLogLevel  = "warn"
-	defaultLogFormat = "json"
-
-	defaultMigrationTimeout = 10 * time.Second
-	defaultMigrationVersion = 0
-	defaultMigrationDir     = ""
-
-	defaultDatabaseSSL        = "prefer"
-	defaultMaxOpenConnections = 100
-	defaultMaxIdleConnections = 20
-	defaultConnMaxLifetime    = 5 * time.Minute
-	defaultInitTimeout        = 2 * time.Second
-
-	defaultJwtTokenLifetime        = 1 * time.Hour
-	defaultJwtRefreshTokenLifetime = 24 * time.Hour
-
-	defaultRedisvalue       = "6379"
-	defaultRedisInitTimeout = 2 * time.Second
+	defaultConfigFile = ".env"
 )
-
-type viperKey struct {
-	name         string
-	cmdlineName  string
-	defaultValue any
-	usage        string
-	typeCode     typeCode
-}
 
 type loader struct{}
 
@@ -63,273 +23,63 @@ func NewLoader() conf.Loader {
 }
 
 func (l *loader) Load() (*conf.Config, error) {
+	if err := godotenv.Load(defaultConfigFile); err != nil {
+		if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("failed to load .env file: %w", err)
+		}
+	}
+
 	var cfg conf.Config
 
-	viperKeys := genViperKeys()
+	// HTTP
+	cfg.Http.Host = os.Getenv("HTTP_HOST")
+	cfg.Http.Port, _ = parseInt(os.Getenv("HTTP_PORT"))
+	cfg.Http.MaxHeaderBytes, _ = parseInt(os.Getenv("HTTP_MAX_HEADER_BYTES"))
+	cfg.Http.ReadTimeout, _ = parseDuration(os.Getenv("HTTP_READ_TIMEOUT"))
+	cfg.Http.WriteTimeout, _ = parseDuration(os.Getenv("HTTP_WRITE_TIMEOUT"))
+	cfg.Http.IdleTimeout, _ = parseDuration(os.Getenv("HTTP_IDLE_TIMEOUT"))
+	cfg.Http.ReadHeaderTimeout, _ = parseDuration(os.Getenv("HTTP_READ_HEADER_TIMEOUT"))
+	cfg.Http.ShutdownTimeout, _ = parseDuration(os.Getenv("HTTP_SHUTDOWN_TIMEOUT"))
 
-	setDefaultValues(viperKeys)
+	// Log
+	cfg.Log.Format = os.Getenv("LOG_FORMAT")
+	cfg.Log.Level = os.Getenv("LOG_LEVEL")
 
-	err := setCmdlineArgs(viperKeys)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse cmdline args :%w", err)
+	// DB
+	cfg.DB.Host = os.Getenv("DB_HOST")
+	cfg.DB.Port, _ = parseInt(os.Getenv("DB_PORT"))
+	cfg.DB.User = os.Getenv("DB_USER")
+	cfg.DB.Pwd = os.Getenv("DB_PWD")
+	cfg.DB.Database = os.Getenv("DB_DATABASE")
+	cfg.DB.SSL = os.Getenv("DB_SSL")
+	cfg.DB.MaxOpenConnections, _ = parseInt(os.Getenv("DB_MAX_OPEN"))
+	cfg.DB.MaxIdleConnections, _ = parseInt(os.Getenv("DB_MAX_IDLE"))
+	cfg.DB.ConnMaxLifetime, _ = parseDuration(os.Getenv("DB_MAX_LIFETIME"))
+	cfg.DB.InitTimeout, _ = parseDuration(os.Getenv("DB_INIT_TIMEOUT"))
+
+	if err := val.ValidateStruct(&cfg); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
-	loadEnv(viperKeys)
-
-	err = loadConfigFile(viper.GetString(defaultConfigKey))
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config file: %w", err)
-	}
-
-	if err = viper.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config from environment: %w", err)
-	}
-
-	if err = val.ValidateStruct(&cfg); err != nil {
-		return nil, fmt.Errorf("failed to validate loaded config: %w", err)
-	}
 	return &cfg, nil
 }
 
-func genViperKeys() []viperKey {
-	return []viperKey{
-		{
-			name:         defaultConfigKey,
-			cmdlineName:  defaultConfigKey,
-			defaultValue: defaultConfigFilePath,
-			usage:        "Path to configuration file",
-			typeCode:     typeString,
-		},
-		// Http options
-		{
-			name:         "http.host",
-			cmdlineName:  "http-host",
-			defaultValue: nil,
-			usage:        "Host address(es) to bind the HTTP server to",
-			typeCode:     typeString,
-		},
-		{
-			name:         "http.port",
-			cmdlineName:  "http-port",
-			defaultValue: nil,
-			usage:        "Port to run the HTTP server on",
-			typeCode:     typeInt,
-		},
-		{
-			name:         "http.max_header_bytes",
-			cmdlineName:  "http-max-header-bytes",
-			defaultValue: defaultHttpMaxHeaderBytes,
-			usage:        "Maximum size of HTTP request headers in bytes",
-			typeCode:     typeInt,
-		},
-		{
-			name:         "http.read_timeout",
-			cmdlineName:  "http-read-timeout",
-			defaultValue: defaultTimeout,
-			usage:        "Maximum duration for reading the entire request",
-			typeCode:     typeDuration,
-		},
-		{
-			name:         "http.write_timeout",
-			cmdlineName:  "http-write-timeout",
-			defaultValue: defaultTimeout,
-			usage:        "Maximum duration for writing the response",
-			typeCode:     typeDuration,
-		},
-		{
-			name:         "http.idle_timeout",
-			cmdlineName:  "http-idle-timeout",
-			defaultValue: defaultIdleTimeout,
-			usage:        "Maximum time to wait for the next request when keep-alives are enabled",
-			typeCode:     typeDuration,
-		},
-		{
-			name:         "http.read_header_timeout",
-			cmdlineName:  "http-read-header-timeout",
-			defaultValue: defaultTimeout,
-			usage:        "Maximum time to read request headers",
-			typeCode:     typeDuration,
-		},
-		{
-			name:         "http.shutdown_timeout",
-			cmdlineName:  "http-shutdown-timeout",
-			defaultValue: defaultTimeout,
-			usage:        "",
-			typeCode:     typeDuration,
-		},
-		// Logger options
-		{
-			name:         "log.format",
-			cmdlineName:  "log-format",
-			defaultValue: defaultLogFormat,
-			usage:        "Log format (json, text)",
-			typeCode:     typeString,
-		},
-		{
-			name:         "log.level",
-			cmdlineName:  "log-level",
-			defaultValue: defaultLogLevel,
-			usage:        "Log level (debug infoUser warn error)",
-			typeCode:     typeString,
-		},
-		// Migration options
-		{
-			name:         "migrate.version",
-			cmdlineName:  "migrate-version",
-			defaultValue: defaultMigrationVersion,
-			usage:        "",
-			typeCode:     typeInt,
-		},
-		{
-			name:         "migrate.dir",
-			cmdlineName:  "migrate-dir",
-			defaultValue: defaultMigrationDir,
-			usage:        "",
-			typeCode:     typeString,
-		},
-		{
-			name:         "migrate.timeout",
-			cmdlineName:  "migrate-timeout",
-			defaultValue: defaultMigrationTimeout,
-			usage:        "",
-			typeCode:     typeDuration,
-		},
-		// Database options
-		{
-			name:         "db.host",
-			cmdlineName:  "db-host",
-			defaultValue: nil,
-			usage:        "",
-			typeCode:     typeString,
-		},
-		{
-			name:         "db.port",
-			cmdlineName:  "db-port",
-			defaultValue: nil,
-			usage:        "",
-			typeCode:     typeInt,
-		},
-		{
-			name:         "db.user",
-			cmdlineName:  "db-user",
-			defaultValue: nil,
-			usage:        "",
-			typeCode:     typeString,
-		},
-		{
-			name:         "db.pwd",
-			cmdlineName:  "db-pwd",
-			defaultValue: nil,
-			usage:        "",
-			typeCode:     typeString,
-		},
-		{
-			name:         "db.database",
-			cmdlineName:  "db-database",
-			defaultValue: nil,
-			usage:        "",
-			typeCode:     typeString,
-		},
-		{
-			name:         "db.ssl",
-			cmdlineName:  "db-ssl",
-			defaultValue: defaultDatabaseSSL,
-			usage:        "",
-			typeCode:     typeString,
-		},
-		{
-			name:         "db.schema",
-			cmdlineName:  "db-schema",
-			defaultValue: nil,
-			usage:        "",
-			typeCode:     typeString,
-		},
-		{
-			name:         "db.max_open",
-			cmdlineName:  "db-max-open",
-			defaultValue: defaultMaxOpenConnections,
-			usage:        "",
-			typeCode:     typeInt,
-		},
-		{
-			name:         "db.max_idle",
-			cmdlineName:  "db-max-idle",
-			defaultValue: defaultMaxIdleConnections,
-			usage:        "",
-			typeCode:     typeInt,
-		},
-		{
-			name:         "db.max_lifetime",
-			cmdlineName:  "db-max-lifetime",
-			defaultValue: defaultConnMaxLifetime,
-			usage:        "",
-			typeCode:     typeDuration,
-		},
-		{
-			name:         "db.init_timeout",
-			cmdlineName:  "db-init-timeout",
-			defaultValue: defaultInitTimeout,
-			usage:        "",
-			typeCode:     typeDuration,
-		},
+func parseInt(s string) (int, error) {
+	if s == "" {
+		return 0, nil
 	}
-}
-
-func setDefaultValues(viperKeys []viperKey) {
-	for _, v := range viperKeys {
-		if v.defaultValue != nil {
-			viper.SetDefault(v.name, v.defaultValue)
-		}
-	}
-}
-
-func setCmdlineArgs(viperKeys []viperKey) error {
-	for _, v := range viperKeys {
-		switch v.typeCode {
-		case typeInt:
-			pflag.Int(v.cmdlineName, 0, v.usage)
-		case typeString:
-			pflag.String(v.cmdlineName, "", v.usage)
-		case typeDuration:
-			pflag.Duration(v.cmdlineName, 0, v.usage)
-		default:
-			return fmt.Errorf("%w (%T)", pkgConf.ErrUnexpectedType, v.typeCode)
-		}
-
-		if err := viper.BindPFlag(v.name, pflag.Lookup(v.cmdlineName)); err != nil {
-			return err
-		}
-	}
-
-	pflag.Parse()
-
-	return viper.BindPFlags(pflag.CommandLine)
-}
-
-func loadEnv(viperKeys []viperKey) {
-	viper.SetEnvPrefix(viperEnvPrefix)
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	for _, v := range viperKeys {
-		_ = viper.BindEnv(v.name)
-	}
-
-	viper.AutomaticEnv()
-}
-
-func loadConfigFile(configPath string) error {
-	viper.SetConfigFile(configPath)
-	err := viper.ReadInConfig()
+	i, err := strconv.Atoi(s)
 	if err != nil {
-		var configFileNotFoundErr viper.ConfigFileNotFoundError
-		var pathErr *os.PathError
-
-		if errors.As(err, &configFileNotFoundErr) || errors.As(err, &pathErr) {
-			return nil
-		} else {
-			return err
-		}
+		return 0, fmt.Errorf("invalid integer: %w", err)
 	}
+	return i, nil
+}
 
-	return nil
+func parseDuration(s string) (time.Duration, error) {
+	if s == "" {
+		return 0, nil
+	}
+	s = strings.TrimSpace(s)
+	s = strings.ToLower(s)
+	return time.ParseDuration(s)
 }

@@ -1,9 +1,8 @@
-package order
+package service
 
 import (
 	"context"
 	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/mayberries/shared/pkg/val"
 	"order_service/internal/models"
@@ -20,13 +19,17 @@ func NewService(db repo.DB) Service {
 	return &service{db: db}
 }
 
-func (s *service) CreateOrder(ctx context.Context, o models.Order) error {
-	o.ID = uuid.New()
+func (s *service) CreateOrder(ctx context.Context, o models.Order) (uuid.UUID, error) {
 	o.Status = defaultStatus
 
 	if err := val.ValidateStruct(o); err != nil {
-		return fmt.Errorf("%w: %v", models.ErrValidation, err)
+		return uuid.Nil, fmt.Errorf("%w: %v", models.ErrValidation, err)
 	}
 
-	return s.db.CreateOrder(ctx, o)
+	id, err := s.db.CreateOrder(ctx, o)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return id, nil
 }
