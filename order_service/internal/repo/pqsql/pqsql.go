@@ -2,6 +2,7 @@ package pqsql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/mayberries/shared/pkg/config"
@@ -62,4 +63,45 @@ func (p *pgsql) CreateOrder(ctx context.Context, order models.Order) (uuid.UUID,
 		return uuid.Nil, fmt.Errorf("failed to create order: %w", result.Error)
 	}
 	return order.ID, nil
+}
+func (p *pgsql) FindOrder(ctx context.Context, id uuid.UUID) (models.Order, error) {
+	var order models.Order
+	result := p.pool.WithContext(ctx).First(&order, id)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return models.Order{}, models.ErrRecordNotFound
+		}
+		return models.Order{}, fmt.Errorf("failed to find order: %w", result.Error)
+	}
+	return order, nil
+}
+
+func (p *pgsql) DeleteOrder(ctx context.Context, id uuid.UUID) error {
+	var order models.Order
+	result := p.pool.WithContext(ctx).First(&order, id)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return models.ErrRecordNotFound
+		}
+		return fmt.Errorf("failed to find order: %w", result.Error)
+	}
+	if err := p.pool.WithContext(ctx).Delete(&order, id).Error; err != nil {
+		return fmt.Errorf("failed to delete order: %w", err)
+	}
+	return nil
+}
+
+func (p *pgsql) PatchOrder(ctx context.Context, id uuid.UUID, status string) error {
+	res := p.pool.WithContext(ctx).
+		Model(&models.Order{}).
+		Where("id = ?", id).
+		Update("status", status)
+
+	if res.Error != nil {
+		return fmt.Errorf("failed to update order status: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return models.ErrRecordNotFound
+	}
+	return nil
 }

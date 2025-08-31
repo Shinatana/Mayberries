@@ -6,6 +6,7 @@ import (
 	"github.com/mayberries/shared/pkg/log"
 	internalConf "order_service/internal/conf"
 	"order_service/internal/conf/loader"
+	"order_service/internal/service"
 	"os/signal"
 	"syscall"
 )
@@ -37,6 +38,8 @@ func App() error {
 		return err
 	}
 
+	svc := service.NewService(db)
+
 	defer func() {
 		db.Close()
 		log.Info("closed database connection")
@@ -45,7 +48,7 @@ func App() error {
 
 	httpClose := Http(
 		&cfg.Http,
-		Gin(db),
+		Gin(svc),
 	)
 
 	defer httpClose()
